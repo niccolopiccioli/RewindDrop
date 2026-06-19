@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: eshop
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eshop-db
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: PAYMENT_MODE
+        value: mock
+      - key: BLOB_READ_WRITE_TOKEN
+        sync: false
+
+databases:
+  - name: eshop-db
+    plan: free
+    region: frankfurt
+    databaseName: eshop
+    user: eshop
