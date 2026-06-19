@@ -78,21 +78,31 @@ prisma/            # Schema e seed
 public/uploads/    # Upload prodotti (locale)
 ```
 
-## Deploy (Render)
+## Deploy (Vercel + Supabase)
 
-L'app è full-stack Next.js (frontend + API nello stesso servizio). Il file `render.yaml` configura web service + Postgres.
+### 1. GitHub
+Repo: https://github.com/niccolopiccioli/eshop-streetwear
 
+### 2. Vercel
+Progetto: **eshop-streetwear** (collegato al repo GitHub)
+
+Dopo aver collegato Supabase dalla dashboard Vercel, imposta queste variabili d'ambiente:
+
+| Variabile | Valore |
+|-----------|--------|
+| `DATABASE_URL` | Connection string Supabase (pooler, porta 6543, `?pgbouncer=true`) |
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `AUTH_TRUST_HOST` | `true` |
+| `PAYMENT_MODE` | `mock` |
+| `NEXT_PUBLIC_APP_URL` | URL produzione Vercel |
+
+Poi dalla **Shell Vercel** o in locale con `DATABASE_URL` di produzione:
 ```bash
-# 1. Push su GitHub
-git add .
-git commit -m "Add e-shop with mock images and Render config"
-git push origin main
-
-# 2. Dashboard Render → New → Blueprint → collega il repo
-# 3. Dopo il primo deploy, esegui il seed dal Render Shell:
+npx prisma migrate deploy
 npm run db:seed
 ```
 
-Credenziali demo dopo il seed: `admin@eshop.local` / `admin123`
+Credenziali demo: `admin@eshop.local` / `admin123`
 
-Per upload immagini persistenti in produzione, imposta `BLOB_READ_WRITE_TOKEN` (Vercel Blob).
+### Alternativa: Render
+Vedi `render.yaml` per deploy con Postgres incluso.
