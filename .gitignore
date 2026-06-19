@@ -36,6 +36,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+.env.vercel*
 
 # supabase local link cache
 supabase/.temp/
