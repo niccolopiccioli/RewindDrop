@@ -4,6 +4,8 @@ import { requireAdminApi } from "@/lib/auth-guards";
 import { productUpdateSchema } from "@/lib/validations/product";
 import { handleApiError } from "@/lib/api-error";
 import { serializeProduct } from "@/lib/serialize";
+import { hardDeleteProductById } from "@/lib/product-delete";
+import { clearProductCartItems } from "@/lib/cart-availability";
 
 export async function GET(
   _request: NextRequest,
@@ -62,6 +64,8 @@ export async function PATCH(
             productId: id,
             url: img.url,
             alt: img.alt ?? null,
+            objectFit: img.objectFit ?? "cover",
+            colorHex: img.colorHex || null,
             position: img.position ?? i,
           })),
         });
@@ -82,6 +86,10 @@ export async function PATCH(
             active: v.active,
           })),
         });
+      }
+
+      if (productData.active === false) {
+        await tx.cartItem.deleteMany({ where: { productId: id } });
       }
 
       return tx.product.findUnique({
@@ -112,19 +120,7 @@ export async function DELETE(
 
   try {
     if (hard) {
-      const [orderItems, cartItems] = await Promise.all([
-        prisma.orderItem.count({ where: { productId: id } }),
-        prisma.cartItem.count({ where: { productId: id } }),
-      ]);
-
-      if (orderItems > 0 || cartItems > 0) {
-        return NextResponse.json(
-          { error: "Impossibile eliminare: prodotto referenziato in ordini o carrelli" },
-          { status: 409 }
-        );
-      }
-
-      await prisma.product.delete({ where: { id } });
+      await hardDeleteProductById(id);
       return NextResponse.json({ success: true, deleted: true });
     }
 
@@ -132,6 +128,8 @@ export async function DELETE(
       where: { id },
       data: { active: false },
     });
+
+    await clearProductCartItems(id);
 
     return NextResponse.json({ success: true, product: { id: product.id, active: false } });
   } catch (error) {

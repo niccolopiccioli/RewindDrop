@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ShoppingBag, User, Menu, X } from "lucide-react";
 import SearchDialog from "@/components/layout/search-dialog";
+import SiteLogo from "@/components/ui/site-logo";
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { useCartStore } from "@/stores/cart";
 
 const navigation = [
@@ -22,10 +22,15 @@ export default function Header() {
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const itemCount = useCartStore((state) => state.getItemCount());
 
   const isHome = pathname === "/";
   const isOverlay = isHome && !scrolled;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 32);
@@ -55,16 +60,18 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-[background-color,border-color,box-shadow] duration-500 ease-out ${
+      className={`z-50 w-full transition-[background-color,border-color,box-shadow] duration-500 ease-out ${
+        isHome ? "fixed top-0 left-0 right-0" : "sticky top-0"
+      } ${
         isOverlay
-          ? "border-b border-white/0 bg-transparent"
+          ? "border-none bg-transparent"
           : scrolled
             ? "glass-header border-b border-black/[0.06] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)]"
             : "border-b border-border/50 bg-white"
       }`}
     >
       <div className="container-wide">
-        <div className="relative flex items-center justify-between h-16">
+        <div className="relative flex items-center justify-between h-[4.25rem]">
           <div className="flex items-center gap-2 sm:gap-3 z-10 min-w-0">
             <button
               type="button"
@@ -82,11 +89,12 @@ export default function Header() {
 
             <Link
               href="/"
-              className={`font-display text-sm font-semibold uppercase tracking-[0.28em] shrink-0 transition-colors duration-300 ${
+              className={`shrink-0 transition-colors duration-300 ${
                 isOverlay ? "text-white" : "text-foreground"
               }`}
+              aria-label="RewindDrop — Home"
             >
-              ESHOP
+              <SiteLogo />
             </Link>
           </div>
 
@@ -129,7 +137,7 @@ export default function Header() {
               aria-label="Carrello"
             >
               <ShoppingBag size={18} strokeWidth={1.5} />
-              {itemCount > 0 && (
+              {mounted && itemCount > 0 && (
                 <span
                   className={`absolute top-0.5 right-0.5 min-w-[1rem] h-4 px-1 text-[10px] font-medium rounded-full flex items-center justify-center ${
                     isOverlay ? "bg-white text-foreground" : "bg-foreground text-white"
@@ -143,56 +151,40 @@ export default function Header() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-hidden
-            />
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="lg:hidden relative z-50 border-t border-black/5 bg-white/95 backdrop-blur-xl"
-            >
-              <nav className="container-wide py-6" aria-label="Menu mobile">
-                <ul className="space-y-1">
-                  {navigation.map((item, i) => (
-                    <motion.li
-                      key={item.name}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.25 }}
+      {mobileMenuOpen && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/20 lg:hidden animate-fade-in"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Chiudi menu"
+          />
+          <div className="lg:hidden relative z-50 border-t border-black/5 bg-white/95 backdrop-blur-xl animate-slide-down">
+            <nav className="container-wide py-5" aria-label="Menu mobile">
+              <ul className="space-y-0">
+                {navigation.map((item) => (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      className={`flex items-center justify-between py-3.5 text-xs uppercase tracking-[0.2em] transition-colors border-b border-border/40 last:border-0 ${
+                        item.accent
+                          ? "text-foreground font-medium"
+                          : "text-muted hover:text-foreground"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Link
-                        href={item.href}
-                        className={`flex items-center justify-between py-3.5 text-xs uppercase tracking-[0.2em] transition-colors border-b border-border/40 last:border-0 ${
-                          item.accent
-                            ? "text-foreground font-medium"
-                            : "text-muted hover:text-foreground"
-                        }`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {item.name}
-                        {item.accent && (
-                          <span className="text-[9px] tracking-widest text-muted">Sale</span>
-                        )}
-                      </Link>
-                    </motion.li>
-                  ))}
-                </ul>
-              </nav>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                      {item.name}
+                      {item.accent && (
+                        <span className="text-[9px] tracking-widest text-muted">Sale</span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+        </>
+      )}
     </header>
   );
 }

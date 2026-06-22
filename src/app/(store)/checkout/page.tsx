@@ -51,7 +51,7 @@ const steps: { id: Step; label: string }[] = [
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { items, getSubtotal, clearCart } = useCartStore();
+  const { items, getSubtotal, clearCart, syncAvailability } = useCartStore();
   const [step, setStep] = useState<Step>("shipping");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -78,6 +78,17 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (items.length === 0 && step !== "confirmation") router.replace("/carrello");
   }, [items.length, step, router]);
+
+  useEffect(() => {
+    if (items.length === 0 || step === "confirmation") return;
+
+    void syncAvailability().then(() => {
+      const unavailable = useCartStore.getState().unavailableVariantIds;
+      if (unavailable.length > 0) {
+        router.replace("/carrello");
+      }
+    });
+  }, [items, step, router, syncAvailability]);
 
   useEffect(() => {
     fetch("/api/payment-mode")

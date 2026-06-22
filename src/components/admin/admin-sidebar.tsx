@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, FolderTree, ShoppingCart, Store, Menu, X, Warehouse, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Package, FolderTree, ShoppingCart, Store, Menu, X, Warehouse, MessageSquare, LayoutTemplate } from "lucide-react";
 import { useState } from "react";
+import SiteLogo from "@/components/ui/site-logo";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
   { name: "Prodotti", href: "/admin/prodotti", icon: Package },
   { name: "Categorie", href: "/admin/categorie", icon: FolderTree },
+  { name: "Homepage", href: "/admin/homepage", icon: LayoutTemplate },
   { name: "Ordini", href: "/admin/ordini", icon: ShoppingCart },
   { name: "Inventario", href: "/admin/inventario", icon: Warehouse },
   { name: "Recensioni", href: "/admin/recensioni", icon: MessageSquare },
@@ -51,11 +53,16 @@ export default function AdminSidebar() {
         <Menu size={18} />
       </button>
 
-      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:flex-shrink-0 bg-[#1d1d1f] text-white">
+      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:h-full lg:flex-shrink-0 bg-[#1d1d1f] text-white">
         <div className="p-6 border-b border-white/10">
-          <Link href="/admin" className="text-xs font-semibold uppercase tracking-[0.2em]">ESHOP Admin</Link>
+          <Link href="/admin" className="block text-white">
+            <SiteLogo size="compact" className="text-white" />
+            <span className="mt-2 block text-[10px] uppercase tracking-[0.2em] text-white/40">
+              Admin
+            </span>
+          </Link>
         </div>
-        <div className="flex-1 p-4"><NavLinks /></div>
+        <div className="flex-1 overflow-y-auto p-4"><NavLinks /></div>
         <div className="p-4 border-t border-white/10">
           <Link href="/" className="flex items-center gap-2 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors">
             <Store size={14} /> Vai allo shop

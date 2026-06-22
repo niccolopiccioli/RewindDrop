@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import MediaImage from "@/components/ui/media-image";
 import { Minus, Plus, ShoppingBag, Heart, Truck, Shield, Star } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { uniqueSortedSizes } from "@/lib/sku";
+import { type ColorOption, uniqueColors } from "@/lib/colors";
+import ColorSwatches from "@/components/ui/color-swatches";
+import ProductColorGallery from "@/components/product/product-color-gallery";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-
-type ColorOption = { color: string | null | undefined; colorHex: string | null | undefined };
 
 interface Product {
   id: string;
@@ -19,7 +20,7 @@ interface Product {
   price: number;
   comparePrice?: number | null;
   sku: string;
-  images: { id: string; url: string; alt?: string | null }[];
+  images: { id: string; url: string; alt?: string | null; objectFit?: string | null; colorHex?: string | null }[];
   variants: {
     id: string;
     name: string;
@@ -49,7 +50,6 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<ColorOption | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -66,16 +66,8 @@ export default function ProductDetailPage() {
     if (!product) return;
 
     const inStock = product.variants.filter((v) => Number(v.stock) > 0);
-    const sizes = [
-      ...new Set(inStock.filter((v) => v.size).map((v) => v.size!)),
-    ];
-    const colors = [
-      ...new Set(
-        inStock
-          .filter((v) => v.colorHex)
-          .map((v) => JSON.stringify({ color: v.color, colorHex: v.colorHex }))
-      ),
-    ].map((v) => JSON.parse(v));
+    const sizes = uniqueSortedSizes(inStock.map((v) => v.size));
+    const colors = uniqueColors(inStock, { inStockOnly: true });
 
     if (sizes.length === 1) setSelectedSize(sizes[0]);
     if (colors.length === 1) setSelectedColor(colors[0]);
@@ -101,19 +93,15 @@ export default function ProductDetailPage() {
     }
   }
 
-  const availableSizes = [
-    ...new Set(
-      product?.variants.filter((v) => Number(v.stock) > 0 && v.size).map((v) => v.size) || []
-    ),
-  ];
+  const availableSizes = uniqueSortedSizes(
+    product?.variants
+      .filter((v) => Number(v.stock) > 0)
+      .map((v) => v.size) || []
+  );
 
-  const availableColors = [
-    ...new Set(
-      product?.variants
-        .filter((v) => Number(v.stock) > 0 && v.colorHex)
-        .map((v) => JSON.stringify({ color: v.color, colorHex: v.colorHex })) || []
-    ),
-  ].map((v) => JSON.parse(v));
+  const availableColors = uniqueColors(product?.variants ?? [], {
+    inStockOnly: true,
+  });
 
   const needsSize = availableSizes.length > 0;
   const needsColor = availableColors.length > 0;
@@ -186,44 +174,13 @@ export default function ProductDetailPage() {
   return (
     <div className="container-wide py-8 md:py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
-        <div className="lg:sticky lg:top-20 lg:self-start">
-          <div className="relative aspect-[3/4] bg-white overflow-hidden mb-3">
-            <MediaImage
-              src={product.images[selectedImage]?.url}
-              alt={product.images[selectedImage]?.alt || product.name}
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
-              iconClassName="w-12 h-12"
-            />
-            {product.comparePrice && (
-              <span className="absolute top-4 left-4 bg-foreground text-white text-[10px] uppercase tracking-widest px-2 py-1">
-                -{Math.round(((Number(product.comparePrice) - Number(product.price)) / Number(product.comparePrice)) * 100)}%
-              </span>
-            )}
-          </div>
-          {product.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.map((image, index) => (
-                <button
-                  key={image.id}
-                  onClick={() => setSelectedImage(index)}
-                  className={`relative aspect-square bg-white overflow-hidden border border-transparent ${
-                    selectedImage === index ? "ring-1 ring-foreground border-border" : "opacity-50 hover:opacity-100"
-                  }`}
-                >
-                  <MediaImage
-                    src={image.url}
-                    alt={image.alt || product.name}
-                    fill
-                    sizes="100px"
-                    iconClassName="w-5 h-5"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductColorGallery
+          images={product.images}
+          productName={product.name}
+          price={Number(product.price)}
+          comparePrice={product.comparePrice ? Number(product.comparePrice) : null}
+          selectedColor={selectedColor}
+        />
 
         <div>
           <p className="text-[11px] uppercase tracking-widest text-muted mb-2">{product.category.name}</p>
@@ -249,20 +206,12 @@ export default function ProductDetailPage() {
 
           {availableColors.length > 0 && (
             <div className="mb-8">
-              <p className="text-[11px] uppercase tracking-widest text-muted mb-3">Colore — {selectedColor?.color || "Seleziona"}</p>
-              <div className="flex space-x-2">
-                {availableColors.map((color: ColorOption, i: number) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${
-                      selectedColor?.colorHex === color.colorHex ? "border-black scale-110" : "border-gray-200 hover:border-gray-400"
-                    }`}
-                    style={{ backgroundColor: color.colorHex ?? undefined }}
-                    title={color.color ?? undefined}
-                  />
-                ))}
-              </div>
+              <ColorSwatches
+                colors={availableColors}
+                selectedHex={selectedColor?.colorHex}
+                selectedLabel={selectedColor?.color}
+                onSelect={setSelectedColor}
+              />
             </div>
           )}
 

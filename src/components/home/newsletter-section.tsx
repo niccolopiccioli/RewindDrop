@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/button";
+import ScrollReveal from "@/components/home/scroll-reveal";
 
 export default function NewsletterSection() {
   const [email, setEmail] = useState("");
@@ -20,33 +21,66 @@ export default function NewsletterSection() {
   };
 
   return (
-    <section className="py-16 md:py-24">
-      <div className="container-wide max-w-lg mx-auto text-center">
-        <h2 className="text-display text-xl md:text-2xl font-semibold mb-3">
-          Resta aggiornato
-        </h2>
-        <p className="text-sm text-muted mb-8">
-          Offerte esclusive e nuovi arrivi direttamente nella tua inbox.
-        </p>
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="email"
-            placeholder="La tua email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="flex-1 px-4 py-3 border border-border rounded-lg bg-white text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
-          />
-          <Button type="submit" shape="pill">
-            Iscriviti
-          </Button>
-        </form>
-        {status === "ok" && (
-          <p className="text-xs text-green-700 mt-3">Iscrizione completata!</p>
-        )}
-        {status === "error" && (
-          <p className="text-xs text-red-600 mt-3">Email non valida.</p>
-        )}
+    <section className="py-16 md:py-24 border-t border-border">
+      <div className="container-wide">
+        <ScrollReveal direction="scale">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-foreground text-background px-6 py-12 sm:px-10 sm:py-14 md:px-16 md:py-16">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-40"
+              aria-hidden
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 0% 0%, rgba(255,255,255,0.12), transparent 50%), radial-gradient(circle at 100% 100%, rgba(255,255,255,0.08), transparent 45%)",
+              }}
+            />
+
+            <div className="relative max-w-xl mx-auto text-center">
+              <p className="text-[10px] uppercase tracking-[0.35em] text-background/45 mb-4">
+                Inner circle
+              </p>
+              <h2 className="text-display text-2xl sm:text-3xl md:text-4xl font-semibold mb-4">
+                Entra nel drop
+              </h2>
+              <p className="text-sm sm:text-base text-background/55 mb-8 leading-relaxed">
+                Accesso anticipato ai nuovi arrivi, restock e offerte riservate.
+                Niente spam, solo heat.
+              </p>
+
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+              >
+                <input
+                  type="email"
+                  placeholder="La tua email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="flex-1 px-4 py-3.5 rounded-full border border-background/15 bg-background/5 text-background placeholder:text-background/35 text-sm focus:outline-none focus:ring-2 focus:ring-background/30 transition-shadow"
+                />
+                <Button
+                  type="submit"
+                  variant="inverse"
+                  shape="pill"
+                  className="shrink-0"
+                >
+                  Iscriviti
+                </Button>
+              </form>
+
+              {status === "ok" && (
+                <p className="text-xs text-emerald-300 mt-4 animate-fade-in">
+                  Sei dentro. Benvenuto nel drop.
+                </p>
+              )}
+              {status === "error" && (
+                <p className="text-xs text-red-300 mt-4 animate-fade-in">
+                  Email non valida. Riprova.
+                </p>
+              )}
+            </div>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );

@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/auth-guards";
 import { productSchema } from "@/lib/validations/product";
 import { handleApiError } from "@/lib/api-error";
 import { serializeProduct } from "@/lib/serialize";
+
+const VALID_SORTS = ["sku", "category", "price", "stock", "active", "createdAt"] as const;
+type SortField = (typeof VALID_SORTS)[number];
+
+function buildOrderBy(
+  sort: SortField,
+  order: "asc" | "desc"
+): Prisma.ProductOrderByWithRelationInput {
+  switch (sort) {
+    case "sku":
+      return { sku: order };
+    case "category":
+      return { category: { name: order } };
+    case "price":
+      return { price: order };
+    case "active":
+      return { active: order };
+    case "createdAt":
+    default:
+      return { createdAt: order };
+  }
+}
 
 export async function GET(request: NextRequest) {
   const authResult = await requireAdminApi();
@@ -15,6 +38,11 @@ export async function GET(request: NextRequest) {
   const active = searchParams.get("active");
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "20");
+  const sortParam = searchParams.get("sort") || "createdAt";
+  const orderParam = searchParams.get("order") === "asc" ? "asc" : "desc";
+  const sort = VALID_SORTS.includes(sortParam as SortField)
+    ? (sortParam as SortField)
+    : "createdAt";
 
   try {
     const where: Record<string, unknown> = {};
@@ -33,15 +61,53 @@ export async function GET(request: NextRequest) {
     if (active === "true") where.active = true;
     if (active === "false") where.active = false;
 
+    const include = {
+      category: { select: { id: true, name: true, slug: true } },
+      images: { orderBy: { position: "asc" as const }, take: 1 },
+      variants: { select: { id: true, stock: true, active: true } },
+    };
+
+    if (sort === "stock") {
+      const [allProducts, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          include,
+        }),
+        prisma.product.count({ where }),
+      ]);
+
+      const sorted = allProducts
+        .map((p) => ({
+          product: p,
+          totalStock: p.variants.reduce((sum, v) => sum + v.stock, 0),
+        }))
+        .sort((a, b) =>
+          orderParam === "asc"
+            ? a.totalStock - b.totalStock
+            : b.totalStock - a.totalStock
+        );
+
+      const paginated = sorted.slice((page - 1) * limit, page * limit);
+
+      return NextResponse.json({
+        products: paginated.map(({ product, totalStock }) => ({
+          ...serializeProduct(product as Record<string, unknown>),
+          totalStock,
+        })),
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: {
-          category: { select: { id: true, name: true, slug: true } },
-          images: { orderBy: { position: "asc" }, take: 1 },
-          variants: { select: { id: true, stock: true, active: true } },
-        },
-        orderBy: { createdAt: "desc" },
+        include,
+        orderBy: buildOrderBy(sort, orderParam),
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -93,6 +159,8 @@ export async function POST(request: NextRequest) {
             create: data.images.map((img, i) => ({
               url: img.url,
               alt: img.alt ?? null,
+              objectFit: img.objectFit ?? "cover",
+              colorHex: img.colorHex || null,
               position: img.position ?? i,
             })),
           },

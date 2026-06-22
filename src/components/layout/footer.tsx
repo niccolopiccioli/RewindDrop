@@ -1,4 +1,6 @@
 import Link from "next/link";
+import SiteLogo from "@/components/ui/site-logo";
+import { DEMO_DISCLAIMER, SITE_NAME } from "@/lib/site";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -8,12 +10,15 @@ export default function Footer() {
       <div className="container-wide py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8">
           <div className="md:col-span-2">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] mb-4">
-              ESHOP
-            </h2>
+            <Link href="/" className="inline-block mb-4 text-foreground">
+              <SiteLogo size="compact" />
+            </Link>
             <p className="text-muted text-sm max-w-sm leading-relaxed">
               Streetwear essenziale. Qualità premium, design minimal, stile
               autentico.
+            </p>
+            <p className="text-muted text-xs max-w-sm leading-relaxed mt-4 border-l-2 border-border pl-3">
+              {DEMO_DISCLAIMER}
             </p>
           </div>
 
@@ -64,7 +69,7 @@ export default function Footer() {
 
         <div className="border-t border-border mt-12 pt-8 text-center">
           <p className="text-xs text-muted">
-            &copy; {currentYear} ESHOP. Tutti i diritti riservati.
+            &copy; {currentYear} {SITE_NAME}. Tutti i diritti riservati.
           </p>
         </div>
       </div>

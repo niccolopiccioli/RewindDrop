@@ -23,6 +23,21 @@ export function handleApiError(error: unknown) {
         { status: 409 }
       );
     }
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Record non trovato" }, { status: 404 });
+    }
+  }
+
+  if (error instanceof Prisma.PrismaClientValidationError) {
+    const message = error.message;
+    const schemaHint =
+      message.includes("Unknown argument") || message.includes("Unknown field")
+        ? " Schema database non aggiornato: esegui `npx prisma generate && npx prisma db push` e riavvia il server."
+        : "";
+    return NextResponse.json(
+      { error: `Errore database.${schemaHint}` },
+      { status: 500 }
+    );
   }
 
   console.error("API error:", error);

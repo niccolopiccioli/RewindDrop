@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
         name: data.name,
         slug: data.slug,
         description: data.description || null,
-        image: data.image || null,
+        image: data.image === "" || data.image === null ? null : data.image || null,
+        imageAlt:
+          data.imageAlt === "" || data.imageAlt === null ? null : data.imageAlt || null,
+        objectFit: data.objectFit || "cover",
         parentId: data.parentId || null,
       },
       include: {

@@ -3,7 +3,10 @@
 import Link from "next/link";
 import MediaImage from "@/components/ui/media-image";
 import ProductBadge from "@/components/ui/product-badge";
+import ProductCardColorCycler from "@/components/product/product-card-color-cycler";
 import SizePills from "@/components/ui/size-pills";
+import { normalizeImageFit } from "@/lib/image-fit";
+import { uniqueSortedSizes } from "@/lib/sku";
 
 interface ProductCardProps {
   product: {
@@ -13,7 +16,12 @@ interface ProductCardProps {
     price: number;
     comparePrice?: number | null;
     featured?: boolean;
-    images: { url: string; alt?: string | null }[];
+    images: {
+      url: string;
+      alt?: string | null;
+      objectFit?: string | null;
+      colorHex?: string | null;
+    }[];
     variants: {
       size?: string | null;
       color?: string | null;
@@ -22,9 +30,16 @@ interface ProductCardProps {
     }[];
   };
   badge?: "new" | "sale" | null;
+  showSizes?: boolean;
+  cycleColors?: boolean;
 }
 
-export default function ProductCard({ product, badge }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  badge,
+  showSizes,
+  cycleColors = false,
+}: ProductCardProps) {
   const price = Number(product.price);
   const comparePrice = product.comparePrice
     ? Number(product.comparePrice)
@@ -35,13 +50,11 @@ export default function ProductCard({ product, badge }: ProductCardProps) {
       ? Math.round(((comparePrice - price) / comparePrice) * 100)
       : null;
 
-  const availableSizes = [
-    ...new Set(
-      product.variants
-        .filter((v) => Number(v.stock) > 0 && v.size)
-        .map((v) => v.size!)
-    ),
-  ];
+  const availableSizes = uniqueSortedSizes(
+    product.variants
+      .filter((v) => Number(v.stock) > 0)
+      .map((v) => v.size)
+  );
 
   const displayBadge =
     badge === "sale" && discount
@@ -57,28 +70,50 @@ export default function ProductCard({ product, badge }: ProductCardProps) {
   return (
     <article className="group">
       <Link href={`/prodotti/${product.slug}`} className="block">
-        <div className="relative aspect-[3/4] bg-white overflow-hidden mb-3">
-          <MediaImage
-            src={primaryImage?.url}
-            alt={primaryImage?.alt || product.name}
-            fill
-            className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+        {cycleColors ? (
+          <ProductCardColorCycler
+            productId={product.id}
+            productName={product.name}
+            images={product.images}
+            variants={product.variants}
+            displayBadge={displayBadge}
+            badgeVariant={badge === "new" ? "new" : "sale"}
+            availableSizes={availableSizes}
+            showSizes={showSizes}
           />
-          {displayBadge && (
-            <div className="absolute top-3 left-3">
-              <ProductBadge
-                label={displayBadge}
-                variant={badge === "new" ? "new" : "sale"}
-              />
-            </div>
-          )}
-          {availableSizes.length > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-black/40 to-transparent">
-              <SizePills sizes={availableSizes.slice(0, 6)} />
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="relative aspect-[3/4] bg-white overflow-hidden mb-3">
+            <MediaImage
+              src={primaryImage?.url}
+              alt={primaryImage?.alt || product.name}
+              fill
+              fit={normalizeImageFit(primaryImage?.objectFit)}
+              imageWidth={480}
+              loading="lazy"
+              className="md:group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+              sizes="(max-width: 640px) 42vw, (max-width: 1024px) 28vw, 280px"
+            />
+            {displayBadge && (
+              <div className="absolute top-3 left-3">
+                <ProductBadge
+                  label={displayBadge}
+                  variant={badge === "new" ? "new" : "sale"}
+                />
+              </div>
+            )}
+            {availableSizes.length > 0 && (
+              <div
+                className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/40 to-transparent ${
+                  showSizes
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                }`}
+              >
+                <SizePills sizes={availableSizes.slice(0, 6)} />
+              </div>
+            )}
+          </div>
+        )}
       </Link>
 
       <div className="space-y-1">

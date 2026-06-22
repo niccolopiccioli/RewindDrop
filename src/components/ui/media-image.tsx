@@ -3,8 +3,16 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
+import type { ImageFit } from "@/lib/image-fit";
+import { normalizeImageFit } from "@/lib/image-fit";
+import {
+  isExternalImageUrl,
+  isLocalImagePath,
+  normalizeImageUrl,
+  optimizeImageUrl,
+} from "@/lib/image-url";
 
-type ImageFit = "cover" | "contain";
+export type { ImageFit };
 
 type MediaImageProps = {
   src?: string | null;
@@ -15,18 +23,16 @@ type MediaImageProps = {
   iconClassName?: string;
   sizes?: string;
   priority?: boolean;
+  loading?: "lazy" | "eager";
+  imageWidth?: number;
   width?: number;
   height?: number;
-  /** cover = crop to fill; contain = show full image (default for external URLs) */
+  /** cover = riempie il contenitore; contain = mostra tutta l'immagine */
   fit?: ImageFit;
 };
 
 function isLocalImage(src: string) {
-  return src.startsWith("/") && !src.startsWith("//");
-}
-
-function isExternalImage(src: string) {
-  return !isLocalImage(src);
+  return isLocalImagePath(src);
 }
 
 function stripObjectFit(className: string) {
@@ -38,19 +44,20 @@ function stripObjectFit(className: string) {
 
 function resolveFit(
   fit: ImageFit | undefined,
-  src: string,
+  fill: boolean | undefined,
   className: string
 ): ImageFit {
   if (fit) return fit;
   if (className.includes("object-contain")) return "contain";
   if (className.includes("object-cover")) return "cover";
-  return isExternalImage(src) ? "contain" : "cover";
+  return fill ? "cover" : "contain";
 }
 
-function fitClasses(fit: ImageFit, isExternal: boolean) {
-  const base = fit === "contain" ? "object-contain object-center" : "object-cover object-center";
-  const padding = fit === "contain" && isExternal ? "p-2" : "";
-  return `${base} ${padding}`.trim();
+function fitClasses(fit: ImageFit, className: string) {
+  const hasCustomPosition = /\bobject-(top|bottom|left|right|\[)/.test(className);
+  const base = fit === "contain" ? "object-contain" : "object-cover";
+  const position = hasCustomPosition ? "" : " object-center";
+  return `${base}${position}`.trim();
 }
 
 function ImagePlaceholder({
@@ -79,6 +86,8 @@ export default function MediaImage({
   className = "",
   sizes,
   priority,
+  loading,
+  imageWidth,
   placeholderClassName = "",
   iconClassName = "w-8 h-8",
   fit,
@@ -107,34 +116,33 @@ export default function MediaImage({
     );
   }
 
-  const imageSrc = src!.trim();
-  const external = isExternalImage(imageSrc);
-  const resolvedFit = resolveFit(fit, imageSrc, className);
+  const imageSrc = optimizeImageUrl(
+    normalizeImageUrl(src!.trim()),
+    imageWidth ?? (priority ? 1200 : 800)
+  );
+  const external = isExternalImageUrl(imageSrc) || !isLocalImage(imageSrc);
+  const resolvedLoading = loading ?? (priority ? "eager" : "lazy");
+  const resolvedFit = normalizeImageFit(
+    resolveFit(fit, fill, className)
+  );
   const layoutClass = stripObjectFit(className);
-  const objectClass = fitClasses(resolvedFit, external);
+  const objectClass = fitClasses(resolvedFit, className);
   const combinedClass = `${objectClass} ${layoutClass}`.trim();
+  const fillClass = fill ? "absolute inset-0 h-full w-full max-h-full max-w-full" : "";
 
   if (external) {
-    if (fill) {
-      return (
-        // eslint-disable-next-line @next/next/no-img-element -- external URLs bypass next/image host allowlist
-        <img
-          src={imageSrc}
-          alt={alt}
-          className={`absolute inset-0 h-full w-full max-h-full max-w-full ${combinedClass}`}
-          onError={() => setError(true)}
-        />
-      );
-    }
-
     return (
       // eslint-disable-next-line @next/next/no-img-element -- external URLs bypass next/image host allowlist
       <img
         src={imageSrc}
         alt={alt}
-        width={width}
-        height={height}
-        className={combinedClass}
+        width={fill ? undefined : width}
+        height={fill ? undefined : height}
+        className={`${fillClass} ${combinedClass}`.trim()}
+        loading={resolvedLoading}
+        decoding="async"
+        fetchPriority={priority ? "high" : "auto"}
+        referrerPolicy="no-referrer"
         onError={() => setError(true)}
       />
     );
@@ -147,7 +155,7 @@ export default function MediaImage({
       fill={fill}
       width={width}
       height={height}
-      className={combinedClass}
+      className={`${combinedClass}`.trim()}
       sizes={sizes}
       priority={priority}
       onError={() => setError(true)}

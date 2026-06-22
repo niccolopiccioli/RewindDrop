@@ -32,6 +32,7 @@ export async function POST(
         productId: id,
         url: data.url,
         alt: data.alt ?? null,
+        objectFit: data.objectFit ?? "cover",
         position: data.position ?? (maxPosition._max.position ?? -1) + 1,
       },
     });

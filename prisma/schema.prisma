@@ -68,6 +68,9 @@ model Category {
   slug          String     @unique
   description   String?    @db.Text
   image         String?
+  imageAlt      String?
+  objectFit     String     @default("cover")
+  bannerSubtitle String?
   parentId      String?
   parent        Category?  @relation("SubCategories", fields: [parentId], references: [id])
   subCategories Category[] @relation("SubCategories")
@@ -114,11 +117,14 @@ model Image {
   id        String  @id @default(cuid())
   url       String
   alt       String?
+  objectFit String  @default("cover")
+  colorHex  String?
   position  Int     @default(0)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
 
   @@index([productId])
+  @@index([colorHex])
 }
 
 model Variant {
@@ -201,10 +207,10 @@ model OrderItem {
   id        String   @id @default(cuid())
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String
-  variant   Variant  @relation(fields: [variantId], references: [id])
-  variantId String
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId String?
+  variant   Variant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  variantId String?
   name      String
   sku       String
   quantity  Int
@@ -264,6 +270,18 @@ model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+model HomeSpot {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  title     String
+  subtitle  String?
+  href      String   @default("/prodotti")
+  image     String?
+  imageAlt  String?
+  objectFit String   @default("cover")
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {

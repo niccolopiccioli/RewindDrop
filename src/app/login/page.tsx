@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
+import SiteLogo from "@/components/ui/site-logo";
+import { DEMO_DISCLAIMER_SHORT } from "@/lib/site";
 
 function LoginForm() {
   const router = useRouter();
@@ -71,7 +73,9 @@ function LoginForm() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 bg-surface">
       <div className="w-full max-w-sm bg-white p-8 md:p-10 border border-border">
         <div className="text-center mb-8">
-          <Link href="/" className="text-sm font-semibold uppercase tracking-[0.2em]">ESHOP</Link>
+          <Link href="/" className="inline-flex justify-center">
+            <SiteLogo size="hero" />
+          </Link>
           <h1 className="text-display text-lg font-semibold mt-6">
             {isAdmin ? "Area Admin" : mode === "login" ? "Accedi" : "Registrati"}
           </h1>
@@ -115,7 +119,11 @@ function LoginForm() {
           </Button>
         </form>
 
-        <div className="text-center text-xs text-muted mt-8 space-y-2">
+        <p className="text-[10px] text-muted text-center leading-relaxed mt-6 px-1">
+          {DEMO_DISCLAIMER_SHORT}
+        </p>
+
+        <div className="text-center text-xs text-muted mt-6 space-y-2">
           <Link href="/" className="block hover:text-foreground transition-colors">Torna allo shop</Link>
           {!isAdmin && (
             <Link href="/login?admin=1&callbackUrl=/admin" className="block hover:text-foreground transition-colors">

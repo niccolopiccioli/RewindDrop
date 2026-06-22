@@ -20,10 +20,24 @@ export async function PATCH(
     const category = await prisma.category.update({
       where: { id },
       data: {
-        ...data,
-        description: data.description === "" ? null : data.description,
-        image: data.image === "" ? null : data.image,
-        parentId: data.parentId === "" ? null : data.parentId,
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.slug !== undefined ? { slug: data.slug } : {}),
+        description:
+          data.description === "" || data.description === null
+            ? null
+            : data.description ?? undefined,
+        image:
+          data.image === "" || data.image === null
+            ? null
+            : data.image ?? undefined,
+        imageAlt:
+          data.imageAlt === "" || data.imageAlt === null
+            ? null
+            : data.imageAlt ?? undefined,
+        objectFit: data.objectFit ?? undefined,
+        bannerSubtitle:
+          data.bannerSubtitle === "" ? null : data.bannerSubtitle ?? undefined,
+        parentId: data.parentId === "" ? null : data.parentId ?? undefined,
       },
       include: {
         _count: { select: { products: true } },

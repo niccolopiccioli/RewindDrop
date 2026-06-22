@@ -10,15 +10,28 @@ import DataTable, {
   DataTableRow,
   DataTableCell,
 } from "@/components/admin/data-table";
+import MediaImage from "@/components/ui/media-image";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
+import AdminSaveActions, {
+  CREATE_SUCCESS,
+  SAVE_SUCCESS,
+  type SaveFeedback,
+} from "@/components/admin/admin-save-actions";
+import AdminBackButton from "@/components/admin/admin-back-button";
+import AdminImageField from "@/components/admin/admin-image-field";
 import { slugify } from "@/lib/slug";
+import type { ImageFit } from "@/lib/image-fit";
+import { normalizeImageFit } from "@/lib/image-fit";
 
 interface Category {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  image: string | null;
+  imageAlt: string | null;
+  objectFit?: string | null;
   _count: { products: number };
 }
 
@@ -30,8 +43,11 @@ export default function AdminCategoriesPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [image, setImage] = useState("");
+  const [imageAlt, setImageAlt] = useState("");
+  const [objectFit, setObjectFit] = useState<ImageFit>("cover");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback>(null);
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -49,9 +65,12 @@ export default function AdminCategoriesPage() {
     setName("");
     setSlug("");
     setDescription("");
+    setImage("");
+    setImageAlt("");
+    setObjectFit("cover");
     setEditingId(null);
     setShowForm(false);
-    setError("");
+    setSaveFeedback(null);
   };
 
   const startEdit = (cat: Category) => {
@@ -59,13 +78,16 @@ export default function AdminCategoriesPage() {
     setName(cat.name);
     setSlug(cat.slug);
     setDescription(cat.description || "");
+    setImage(cat.image || "");
+    setImageAlt(cat.imageAlt || cat.name);
+    setObjectFit(normalizeImageFit(cat.objectFit));
+    setSaveFeedback(null);
     setShowForm(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveCategory = async () => {
     setSaving(true);
-    setError("");
+    setSaveFeedback(null);
 
     try {
       const url = editingId
@@ -74,19 +96,41 @@ export default function AdminCategoriesPage() {
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, description: description || null }),
+        body: JSON.stringify({
+          name,
+          slug,
+          description: description || null,
+          image: image.trim() === "" ? "" : image,
+          imageAlt: imageAlt.trim() === "" ? "" : imageAlt,
+          objectFit,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      resetForm();
-      fetchCategories();
+      const wasCreate = !editingId;
+      if (wasCreate && data.id) {
+        setEditingId(data.id);
+      }
+      setSaveFeedback({
+        type: "success",
+        text: wasCreate ? CREATE_SUCCESS : SAVE_SUCCESS,
+      });
+      await fetchCategories();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore");
+      setSaveFeedback({
+        type: "error",
+        text: err instanceof Error ? err.message : "Errore",
+      });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void saveCategory();
   };
 
   const handleDelete = async (id: string) => {
@@ -116,12 +160,14 @@ export default function AdminCategoriesPage() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="mb-8 border border-gray-200 rounded-2xl p-6 space-y-4"
+          className="mb-8 border border-gray-200 rounded-2xl p-6 space-y-6"
         >
-          <h2 className="text-lg font-bold">
-            {editingId ? "Modifica categoria" : "Nuova categoria"}
-          </h2>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex items-center gap-3">
+            <AdminBackButton onClick={resetForm} label="Torna alle categorie" />
+            <h2 className="text-lg font-bold">
+              {editingId ? "Modifica categoria" : "Nuova categoria"}
+            </h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nome"
@@ -129,6 +175,7 @@ export default function AdminCategoriesPage() {
               onChange={(e) => {
                 setName(e.target.value);
                 if (!editingId) setSlug(slugify(e.target.value));
+                if (!imageAlt || imageAlt === name) setImageAlt(e.target.value);
               }}
               required
             />
@@ -144,14 +191,27 @@ export default function AdminCategoriesPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <div className="flex gap-3">
-            <Button type="submit" loading={saving}>
-              {editingId ? "Salva" : "Crea"}
-            </Button>
-            <Button type="button" variant="outline" onClick={resetForm}>
-              Annulla
-            </Button>
-          </div>
+
+          <section className="border border-border bg-white p-6 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h3 className="text-lg font-bold">Immagine</h3>
+              <AdminSaveActions
+                saveLabel={editingId ? "Salva" : "Crea"}
+                saving={saving}
+                saveFeedback={saveFeedback}
+                onSave={() => void saveCategory()}
+              />
+            </div>
+            <AdminImageField
+              values={{ image, imageAlt, objectFit }}
+              onChange={({ image: nextImage, imageAlt: nextAlt, objectFit: nextFit }) => {
+                setImage(nextImage);
+                setImageAlt(nextAlt);
+                setObjectFit(nextFit);
+              }}
+              altPlaceholder={name || "Nome categoria"}
+            />
+          </section>
         </form>
       )}
 
@@ -161,6 +221,7 @@ export default function AdminCategoriesPage() {
         <DataTable>
           <table className="w-full">
             <DataTableHead>
+              <DataTableHeaderCell>Immagine</DataTableHeaderCell>
               <DataTableHeaderCell>Nome</DataTableHeaderCell>
               <DataTableHeaderCell>Slug</DataTableHeaderCell>
               <DataTableHeaderCell>Prodotti</DataTableHeaderCell>
@@ -169,6 +230,18 @@ export default function AdminCategoriesPage() {
             <DataTableBody>
               {categories.map((cat) => (
                 <DataTableRow key={cat.id}>
+                  <DataTableCell>
+                    <div className="relative w-10 h-10 rounded overflow-hidden bg-surface border border-border">
+                      <MediaImage
+                        src={cat.image}
+                        alt={cat.imageAlt || cat.name}
+                        fill
+                        fit={normalizeImageFit(cat.objectFit)}
+                        sizes="40px"
+                        iconClassName="w-4 h-4"
+                      />
+                    </div>
+                  </DataTableCell>
                   <DataTableCell className="font-medium">{cat.name}</DataTableCell>
                   <DataTableCell>{cat.slug}</DataTableCell>
                   <DataTableCell>{cat._count.products}</DataTableCell>

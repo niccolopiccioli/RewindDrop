@@ -38,7 +38,7 @@ function normalizeConnectionString(connectionString: string) {
     return connectionString;
   }
 
-  let normalized = connectionString
+  const normalized = connectionString
     .replace(/([?&])sslmode=[^&]*/gi, "$1")
     .replace(/([?&])sslcert=[^&]*/gi, "$1")
     .replace(/([?&])sslrootcert=[^&]*/gi, "$1")
@@ -68,31 +68,6 @@ function createPrismaClient() {
   }
 
   const poolConfig = getPgPoolConfig(connectionString);
-  const normalizedConnectionString = poolConfig.connectionString as string;
-
-  // #region agent log
-  console.error(
-    JSON.stringify({
-      sessionId: "090a4e",
-      hypothesisId: "C2",
-      location: "src/lib/prisma.ts:createPrismaClient",
-      message: "Prisma pool config",
-      data: {
-        envSource: process.env.POSTGRES_PRISMA_URL
-          ? "POSTGRES_PRISMA_URL"
-          : process.env.POSTGRES_URL
-            ? "POSTGRES_URL"
-            : "DATABASE_URL",
-        host: getDatabaseHost(connectionString),
-        sslEnabled: Boolean(poolConfig.ssl),
-        sslMode: normalizedConnectionString.includes("sslmode=no-verify")
-          ? "no-verify"
-          : "default",
-      },
-      timestamp: Date.now(),
-    })
-  );
-  // #endregion
 
   const adapter = new PrismaPg(poolConfig);
 
@@ -101,6 +76,19 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function isPrismaClientStale(client: PrismaClient): boolean {
+  return typeof (client as PrismaClient & { homeSpot?: unknown }).homeSpot === "undefined";
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+function getPrismaClient(): PrismaClient {
+  const cached = globalForPrisma.prisma;
+  if (cached && !isPrismaClientStale(cached)) {
+    return cached;
+  }
+
+  const client = createPrismaClient();
+  globalForPrisma.prisma = client;
+  return client;
+}
+
+export const prisma = getPrismaClient();

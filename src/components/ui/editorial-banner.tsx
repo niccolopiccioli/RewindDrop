@@ -1,5 +1,7 @@
 import Link from "next/link";
 import MediaImage from "@/components/ui/media-image";
+import type { ImageFit } from "@/lib/image-fit";
+import { normalizeImageFit } from "@/lib/image-fit";
 
 export default function EditorialBanner({
   title,
@@ -7,6 +9,7 @@ export default function EditorialBanner({
   href,
   image,
   imageAlt,
+  objectFit,
   className = "",
 }: {
   title: string;
@@ -14,8 +17,11 @@ export default function EditorialBanner({
   href: string;
   image?: string | null;
   imageAlt: string;
+  objectFit?: ImageFit | string | null;
   className?: string;
 }) {
+  const fit = normalizeImageFit(objectFit);
+
   return (
     <Link
       href={href}
@@ -25,7 +31,10 @@ export default function EditorialBanner({
         src={image}
         alt={imageAlt}
         fill
-        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+        fit={fit}
+        imageWidth={900}
+        loading="lazy"
+        className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
         sizes="(max-width: 768px) 100vw, 50vw"
         iconClassName="w-10 h-10"
       />

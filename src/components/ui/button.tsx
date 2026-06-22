@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 import { Loader2 } from "lucide-react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  variant?: "primary" | "inverse" | "secondary" | "outline" | "outline-inverse" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   shape?: "default" | "pill";
   loading?: boolean;
@@ -31,9 +31,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: "bg-black text-white hover:bg-[#1d1d1f] focus:ring-black",
+      inverse: "bg-white text-black hover:bg-white/90 focus:ring-white",
       secondary: "bg-surface text-foreground hover:bg-border/50 focus:ring-muted",
       outline:
         "border border-foreground text-foreground hover:bg-foreground hover:text-white focus:ring-foreground",
+      "outline-inverse":
+        "border border-white/30 text-white hover:bg-white hover:text-black focus:ring-white",
       ghost: "text-foreground hover:bg-surface focus:ring-muted",
       danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
     };

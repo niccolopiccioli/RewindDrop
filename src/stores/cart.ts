@@ -18,18 +18,23 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[];
+  unavailableVariantIds: string[];
   addItem: (item: Omit<CartItem, "id">) => void;
   removeItem: (variantId: string) => void;
   updateQuantity: (variantId: string, quantity: number) => void;
   clearCart: () => void;
   getSubtotal: () => number;
   getItemCount: () => number;
+  setUnavailableVariantIds: (variantIds: string[]) => void;
+  syncAvailability: () => Promise<void>;
+  isUnavailable: (variantId: string) => boolean;
 }
 
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      unavailableVariantIds: [],
 
       addItem: (item) => {
         set((state) => {
@@ -70,21 +75,61 @@ export const useCartStore = create<CartStore>()(
       },
 
       clearCart: () => {
-        set({ items: [] });
+        set({ items: [], unavailableVariantIds: [] });
+      },
+
+      setUnavailableVariantIds: (variantIds) => {
+        set({ unavailableVariantIds: variantIds });
+      },
+
+      syncAvailability: async () => {
+        const { items } = get();
+        if (items.length === 0) {
+          set({ unavailableVariantIds: [] });
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/cart/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: items.map((item) => ({
+                productId: item.productId,
+                variantId: item.variantId,
+              })),
+            }),
+          });
+          const data = await res.json();
+          set({ unavailableVariantIds: data.unavailableVariantIds ?? [] });
+        } catch {
+          set({ unavailableVariantIds: [] });
+        }
+      },
+
+      isUnavailable: (variantId) => {
+        return get().unavailableVariantIds.includes(variantId);
       },
 
       getSubtotal: () => {
-        const { items } = get();
-        return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const { items, unavailableVariantIds } = get();
+        return items.reduce((sum, item) => {
+          if (unavailableVariantIds.includes(item.variantId)) return sum;
+          return sum + item.price * item.quantity;
+        }, 0);
       },
 
       getItemCount: () => {
-        const { items } = get();
-        return items.reduce((sum, item) => sum + item.quantity, 0);
+        const { items, unavailableVariantIds } = get();
+        return items.reduce((sum, item) => {
+          if (unavailableVariantIds.includes(item.variantId)) return sum;
+          return sum + item.quantity;
+        }, 0);
       },
     }),
     {
       name: "eshop-cart",
+      partialize: (state) => ({ items: state.items }),
       storage: createJSONStorage(() =>
         typeof window !== "undefined"
           ? localStorage

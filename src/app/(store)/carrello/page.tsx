@@ -7,8 +7,17 @@ import { useCartStore } from "@/stores/cart";
 import Button from "@/components/ui/button";
 
 export default function CarrelloPage() {
-  const { items, removeItem, updateQuantity, getSubtotal, clearCart } = useCartStore();
-  const subtotal = getSubtotal();
+  const { items, removeItem, updateQuantity, clearCart, unavailableVariantIds } =
+    useCartStore();
+
+  const hasUnavailable = items.some((item) =>
+    unavailableVariantIds.includes(item.variantId)
+  );
+
+  const subtotal = items.reduce((sum, item) => {
+    if (unavailableVariantIds.includes(item.variantId)) return sum;
+    return sum + item.price * item.quantity;
+  }, 0);
   const shipping = subtotal >= 50 ? 0 : 5.99;
   const total = subtotal + shipping;
 
@@ -34,42 +43,75 @@ export default function CarrelloPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
         <div className="lg:col-span-2 space-y-0 divide-y divide-border">
-          {items.map((item) => (
-            <div key={item.id} className="flex gap-5 py-6 first:pt-0">
-              <Link href={`/prodotti/${item.slug}`} className="relative w-24 h-32 md:w-28 md:h-36 bg-white border border-border overflow-hidden flex-shrink-0">
+          {hasUnavailable && (
+            <p className="text-sm text-red-600 pb-4">
+              Alcuni articoli nel carrello non sono più disponibili. Rimuovili per
+              procedere al checkout.
+            </p>
+          )}
+          {items.map((item) => {
+            const unavailable = unavailableVariantIds.includes(item.variantId);
+
+            return (
+            <div
+              key={item.id}
+              className={`flex gap-5 py-6 first:pt-0 ${unavailable ? "opacity-70" : ""}`}
+            >
+              <div className="relative w-24 h-32 md:w-28 md:h-36 bg-white border border-border overflow-hidden flex-shrink-0">
                 <MediaImage src={item.image} alt={item.name} fill sizes="112px" iconClassName="w-6 h-6" />
-              </Link>
+              </div>
               <div className="flex-1 min-w-0 flex flex-col justify-between">
                 <div>
-                  <Link href={`/prodotti/${item.slug}`} className="text-xs uppercase tracking-wide hover:text-muted transition-colors line-clamp-1">
-                    {item.name}
-                  </Link>
-                  <p className="text-[11px] text-muted mt-1 uppercase tracking-wider">
-                    {item.size && `Taglia ${item.size}`}
-                    {item.size && item.color && " · "}
-                    {item.color}
-                  </p>
+                  {unavailable ? (
+                    <p className="text-xs uppercase tracking-wide line-clamp-1 text-muted">
+                      {item.name}
+                    </p>
+                  ) : (
+                    <Link href={`/prodotti/${item.slug}`} className="text-xs uppercase tracking-wide hover:text-muted transition-colors line-clamp-1">
+                      {item.name}
+                    </Link>
+                  )}
+                  {unavailable ? (
+                    <p className="text-xs text-red-600 font-medium mt-2">
+                      Prodotto non più disponibile
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted mt-1 uppercase tracking-wider">
+                      {item.size && `Taglia ${item.size}`}
+                      {item.size && item.color && " · "}
+                      {item.color}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center justify-between mt-4">
-                  <div className="inline-flex items-center border border-border">
-                    <button onClick={() => updateQuantity(item.variantId, Math.max(1, item.quantity - 1))} className="p-2 hover:bg-surface">
-                      <Minus size={12} />
-                    </button>
-                    <span className="w-8 text-center text-xs">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.variantId, Math.min(item.stock, item.quantity + 1))} className="p-2 hover:bg-surface">
-                      <Plus size={12} />
-                    </button>
-                  </div>
+                  {!unavailable ? (
+                    <div className="inline-flex items-center border border-border">
+                      <button onClick={() => updateQuantity(item.variantId, Math.max(1, item.quantity - 1))} className="p-2 hover:bg-surface">
+                        <Minus size={12} />
+                      </button>
+                      <span className="w-8 text-center text-xs">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.variantId, Math.min(item.stock, item.quantity + 1))} className="p-2 hover:bg-surface">
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-muted uppercase tracking-wider">
+                      Non acquistabile
+                    </span>
+                  )}
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
-                    <button onClick={() => removeItem(item.variantId)} className="text-muted hover:text-foreground transition-colors">
+                    {!unavailable && (
+                      <span className="text-sm font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
+                    )}
+                    <button onClick={() => removeItem(item.variantId)} className="text-muted hover:text-foreground transition-colors" title="Rimuovi dal carrello">
                       <Trash2 size={16} strokeWidth={1.5} />
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
           <button onClick={clearCart} className="text-xs text-muted hover:text-foreground pt-4 transition-colors">
             Svuota carrello
           </button>
@@ -96,11 +138,16 @@ export default function CarrelloPage() {
               </div>
             </div>
             <Link href="/checkout" className="block mt-6">
-              <Button fullWidth shape="pill" size="lg">
+              <Button fullWidth shape="pill" size="lg" disabled={hasUnavailable}>
                 Procedi al checkout
                 <ArrowRight className="ml-2" size={16} />
               </Button>
             </Link>
+            {hasUnavailable && (
+              <p className="mt-3 text-center text-xs text-red-600">
+                Rimuovi i prodotti non disponibili per continuare.
+              </p>
+            )}
             <Link href="/prodotti" className="block mt-4 text-center text-xs text-muted hover:text-foreground transition-colors">
               Continua lo shopping
             </Link>

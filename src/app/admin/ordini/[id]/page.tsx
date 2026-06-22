@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/admin/page-header";
 import StatusBadge, {
   orderStatusLabels,
@@ -85,17 +83,10 @@ export default function OrderDetailPage() {
 
   return (
     <div>
-      <Link
-        href="/admin/ordini"
-        className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-black mb-4"
-      >
-        <ArrowLeft size={16} />
-        Torna agli ordini
-      </Link>
-
       <PageHeader
         title={`Ordine ${order.number}`}
         description={`${new Date(order.createdAt).toLocaleString("it-IT")} — ${order.user.name || order.user.email}`}
+        backHref="/admin/ordini"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

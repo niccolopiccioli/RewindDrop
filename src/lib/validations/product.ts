@@ -1,8 +1,17 @@
 import { z } from "zod";
 
+const imageFitSchema = z.enum(["cover", "contain"]).default("cover");
+
 export const imageSchema = z.object({
   url: z.string().min(1, "URL obbligatorio"),
   alt: z.string().optional().nullable(),
+  objectFit: imageFitSchema.optional(),
+  colorHex: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional()
+    .nullable()
+    .or(z.literal("")),
   position: z.number().int().min(0).default(0),
 });
 
