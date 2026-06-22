@@ -58,6 +58,26 @@ export default function Header() {
     ? "text-white/80 hover:text-white hover:bg-white/10"
     : "text-muted hover:text-foreground hover:bg-surface";
 
+  const renderNavLinks = () =>
+    navigation.map((item) => (
+      <Link
+        key={item.name}
+        href={item.href}
+        className={`group relative py-1 text-[10px] font-medium uppercase tracking-[0.2em] transition-colors duration-300 whitespace-nowrap ${navLinkClass} ${
+          isOverlay ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]" : ""
+        } ${item.accent && !isOverlay ? "text-foreground" : ""} ${
+          item.accent && isOverlay ? "text-white" : ""
+        }`}
+      >
+        {item.name}
+        <span
+          className={`absolute -bottom-0.5 left-0 h-px w-0 transition-all duration-300 ease-out group-hover:w-full ${
+            isOverlay ? "bg-white" : "bg-foreground"
+          }`}
+        />
+      </Link>
+    ));
+
   return (
     <header
       className={`z-50 w-full transition-[background-color,border-color,box-shadow] duration-500 ease-out ${
@@ -72,59 +92,75 @@ export default function Header() {
     >
       <div className="container-wide">
         <div className="relative flex items-center justify-between h-[4.25rem]">
-          <div className="flex items-center gap-2 sm:gap-3 z-10 min-w-0">
-            <button
-              type="button"
-              className={`lg:hidden p-2 -ml-2 rounded-full transition-colors ${iconButtonClass}`}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Menu"
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? (
-                <X size={20} strokeWidth={1.5} />
-              ) : (
-                <Menu size={20} strokeWidth={1.5} />
-              )}
-            </button>
+          {isOverlay ? (
+            <div className="flex items-center gap-5 xl:gap-8 z-10 min-w-0 flex-1 pr-4">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <button
+                  type="button"
+                  className={`lg:hidden p-2 -ml-2 rounded-full transition-colors ${iconButtonClass}`}
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Menu"
+                  aria-expanded={mobileMenuOpen}
+                >
+                  {mobileMenuOpen ? (
+                    <X size={20} strokeWidth={1.5} />
+                  ) : (
+                    <Menu size={20} strokeWidth={1.5} />
+                  )}
+                </button>
 
-            <Link
-              href="/"
-              className={`shrink-0 transition-colors duration-300 ${
-                isOverlay ? "text-white" : "text-foreground"
-              }`}
-              aria-label="RewindDrop — Home"
-            >
-              <SiteLogo />
-            </Link>
-          </div>
+                <Link
+                  href="/"
+                  className="shrink-0 text-white transition-colors duration-300"
+                  aria-label="RewindDrop — Home"
+                >
+                  <SiteLogo />
+                </Link>
+              </div>
 
-          <nav
-            className={`hidden lg:flex items-center gap-6 xl:gap-8 absolute -translate-x-1/2 ${
-              isOverlay ? "left-[30%] xl:left-[28%]" : "left-1/2"
-            }`}
-            aria-label="Navigazione principale"
-          >
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group relative py-1 text-[10px] font-medium uppercase tracking-[0.2em] transition-colors duration-300 ${navLinkClass} ${
-                  isOverlay ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]" : ""
-                } ${
-                  item.accent && !isOverlay ? "text-foreground" : ""
-                } ${item.accent && isOverlay ? "text-white" : ""}`}
+              <nav
+                className="hidden lg:flex items-center gap-5 xl:gap-6 min-w-0"
+                aria-label="Navigazione principale"
               >
-                {item.name}
-                <span
-                  className={`absolute -bottom-0.5 left-0 h-px w-0 transition-all duration-300 ease-out group-hover:w-full ${
-                    isOverlay ? "bg-white" : "bg-foreground"
-                  }`}
-                />
-              </Link>
-            ))}
-          </nav>
+                {renderNavLinks()}
+              </nav>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 sm:gap-3 z-10 min-w-0">
+                <button
+                  type="button"
+                  className={`lg:hidden p-2 -ml-2 rounded-full transition-colors ${iconButtonClass}`}
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Menu"
+                  aria-expanded={mobileMenuOpen}
+                >
+                  {mobileMenuOpen ? (
+                    <X size={20} strokeWidth={1.5} />
+                  ) : (
+                    <Menu size={20} strokeWidth={1.5} />
+                  )}
+                </button>
 
-          <div className="flex items-center gap-0.5 z-10">
+                <Link
+                  href="/"
+                  className="shrink-0 text-foreground transition-colors duration-300"
+                  aria-label="RewindDrop — Home"
+                >
+                  <SiteLogo />
+                </Link>
+              </div>
+
+              <nav
+                className="hidden lg:flex items-center gap-6 xl:gap-8 absolute left-1/2 -translate-x-1/2"
+                aria-label="Navigazione principale"
+              >
+                {renderNavLinks()}
+              </nav>
+            </>
+          )}
+
+          <div className="flex items-center gap-0.5 z-10 shrink-0">
             <SearchDialog buttonClassName={iconButtonClass} />
 
             <Link
