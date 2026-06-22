@@ -135,7 +135,7 @@ export async function POST(
     return NextResponse.json(
       {
         ...serializeProduct(duplicate as Record<string, unknown>),
-        redirectUrl: `/admin/prodotti/${duplicate.id}`,
+        redirectUrl: `/admin/products/${duplicate.id}`,
       },
       { status: 201 }
     );

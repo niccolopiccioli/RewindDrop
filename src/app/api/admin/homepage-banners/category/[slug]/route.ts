@@ -63,7 +63,7 @@ export async function PATCH(
 
     return NextResponse.json({
       ...category,
-      href: `/prodotti?category=${category.slug}`,
+      href: `/products?category=${category.slug}`,
     });
   } catch (error) {
     return handleApiError(error);

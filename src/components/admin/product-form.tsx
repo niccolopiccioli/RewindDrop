@@ -8,6 +8,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { useAdminT } from "./admin-locale-provider";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -22,8 +23,6 @@ import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import ProductImagePreview from "@/components/admin/product-image-preview";
 import AdminSaveActions, {
-  CREATE_SUCCESS,
-  SAVE_SUCCESS,
   type SaveFeedback,
 } from "@/components/admin/admin-save-actions";
 import AdminImageField from "@/components/admin/admin-image-field";
@@ -140,6 +139,8 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
   const formRef = useRef<HTMLFormElement>(null);
   const onStatusChangeRef = useRef(onStatusChange);
   onStatusChangeRef.current = onStatusChange;
+  const t = useAdminT();
+  const pt = (k: string, vars?: Record<string, string | number>) => t(`admin.products.${k}`, vars);
   const [currentProductId, setCurrentProductId] = useState(productId);
   const isEdit = !!currentProductId;
 
@@ -265,7 +266,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
         }
         return {
           ...image,
-          alt: `${name.trim() || "Prodotto"} ${colorName}`,
+          alt: `${name.trim() || pt("productNamePlaceholder", { color: "" }).replace(" {color}", "").replace("{color}", "")} ${colorName}`,
         };
       });
     });
@@ -291,7 +292,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
     onStatusChangeRef.current?.({
       loading,
       saveFeedback,
-      saveLabel: isEdit ? "Salva" : "Crea",
+      saveLabel: isEdit ? pt("save") : pt("create"),
       isDirty,
     });
   }, [loading, saveFeedback, isEdit, isDirty]);
@@ -327,6 +328,8 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
     if (sku) checkSkuAvailability(sku);
   }, [sku, checkSkuAvailability]);
 
+  const pf = (k: string) => t(`admin.productForm.${k}`);
+
   const handleNameChange = (value: string) => {
     setName(value);
     if (!isEdit || !slug) {
@@ -347,13 +350,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
     );
 
     if (hasFilledVariants) {
-      if (
-        !confirm(
-          "Applicare le taglie predefinite per questa categoria? Le varianti attuali verranno sostituite nel generatore."
-        )
-      ) {
-        return;
-      }
+      if (!confirm(pf("applyDefaultSizes"))) return;
     }
 
     setSelectedSizes(getDefaultSizesForCategory(cat.slug));
@@ -361,11 +358,11 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
 
   const handleGenerateSku = () => {
     if (!name.trim()) {
-      setError("Inserisci il nome prodotto prima di generare lo SKU");
+      setError(pt("enterNameBeforeSku"));
       return;
     }
     if (!selectedCategory) {
-      setError("Seleziona una categoria prima di generare lo SKU");
+      setError(pt("selectCategoryFirst"));
       return;
     }
 
@@ -384,12 +381,12 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
 
   const handleGenerateMatrix = (colorsOnly = false) => {
     if (!sku.trim()) {
-      setError("Genera o inserisci lo SKU prodotto prima di creare le varianti");
+      setError(pf("generateSkuFirst"));
       return;
     }
 
     if (selectedSizes.length === 0) {
-      setError("Seleziona almeno una taglia");
+      setError(pf("selectAtLeastOneSize"));
       return;
     }
 
@@ -406,9 +403,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
 
   const handleRecalculateVariantSkus = () => {
     if (!sku.trim()) return;
-    if (!confirm("Ricalcolare gli SKU di tutte le varianti in base allo SKU prodotto?")) {
-      return;
-    }
+    if (!confirm(pt("recalculateConfirm"))) return;
     setVariantsOrdered(recalculateVariantSkus(variants, sku.trim()));
   };
 
@@ -427,10 +422,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
     setSaveFeedback(null);
 
     if (skuStatus === "taken") {
-      setSaveFeedback({
-        type: "error",
-        text: "Lo SKU prodotto è già in uso. Scegline un altro.",
-      });
+      setSaveFeedback({ type: "error", text: pt("skuTakenError") });
       return;
     }
 
@@ -486,17 +478,17 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Errore nel salvataggio");
+        throw new Error(data.error || pt("saveFailed"));
       }
 
       if (wasCreate && data.id) {
         setCurrentProductId(data.id);
-        router.replace(`/admin/prodotti/${data.id}`, { scroll: false });
+        router.replace(`/admin/products/${data.id}`, { scroll: false });
       }
 
       setSaveFeedback({
         type: "success",
-        text: wasCreate ? CREATE_SUCCESS : SAVE_SUCCESS,
+        text: wasCreate ? pt("createSuccess") : pt("saveSuccess"),
       });
 
       if (data.images) {
@@ -538,7 +530,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
       router.refresh();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Errore nel salvataggio";
+        err instanceof Error ? err.message : pt("saveFailed");
       setSaveFeedback({ type: "error", text: message });
     } finally {
       setLoading(false);
@@ -554,17 +546,17 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
           </p>
         )}
 
-        <section className="border border-border bg-white p-6 space-y-4">
-          <h2 className="text-xl font-bold">Informazioni base</h2>
+        <section className="border border-border bg-white p-4 sm:p-6 space-y-4">
+          <h2 className="text-xl font-bold">{pt("basicInfo")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Nome"
+              label={pt("name")}
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               required
             />
             <Input
-              label="Slug"
+              label={pt("name")}
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               required
@@ -572,7 +564,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Descrizione
+              {pt("descriptionLabel")}
             </label>
             <textarea
               value={description}
@@ -584,7 +576,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoria
+              {pt("category")}
             </label>
             <select
               value={categoryId}
@@ -592,7 +584,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             >
-              <option value="">Seleziona categoria</option>
+              <option value="">{pt("selectCategoryLabel")}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
@@ -601,17 +593,17 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
             </select>
             {selectedCategory && !isEdit && (
               <p className="mt-1 text-xs text-muted">
-                Template taglie: {getDefaultSizesForCategory(selectedCategory.slug).join(", ")}
+                {pt("sizeTemplate", { sizes: getDefaultSizesForCategory(selectedCategory.slug).join(", ") })}
               </p>
             )}
           </div>
         </section>
 
-        <section className="border border-border bg-white p-6 space-y-4">
-          <h2 className="text-xl font-bold">Prezzi e SKU</h2>
+        <section className="border border-border bg-white p-4 sm:p-6 space-y-4">
+          <h2 className="text-xl font-bold">{pt("pricing")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Prezzo (€)"
+              label={pt("priceEuro")}
               type="number"
               step="0.01"
               min="0"
@@ -620,7 +612,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
               required
             />
             <Input
-              label="Prezzo confronto (€)"
+              label={pt("comparePrice")}
               type="number"
               step="0.01"
               min="0"
@@ -630,9 +622,9 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
           </div>
           <div>
             <label className="block text-[11px] font-medium uppercase tracking-widest text-muted mb-2">
-              SKU prodotto
+              {pt("productSku")}
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
@@ -645,24 +637,24 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 type="button"
                 variant="outline"
                 onClick={handleGenerateSku}
-                title="Genera SKU"
+                title={pt("generateSku")}
                 className="shrink-0"
               >
                 <Wand2 size={16} className="mr-1.5" />
-                Genera
+                {pt("generate")}
               </Button>
             </div>
             {skuStatus === "checking" && (
-              <p className="mt-1 text-xs text-muted">Verifica disponibilità...</p>
+              <p className="mt-1 text-xs text-muted">{pt("checkingAvailability")}</p>
             )}
             {skuStatus === "available" && sku && (
-              <p className="mt-1 text-xs text-green-600">SKU disponibile</p>
+              <p className="mt-1 text-xs text-green-600">{pt("skuAvailable")}</p>
             )}
             {skuStatus === "taken" && (
-              <p className="mt-1 text-xs text-red-600">SKU già in uso</p>
+              <p className="mt-1 text-xs text-red-600">{pt("skuTaken")}</p>
             )}
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -670,7 +662,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 onChange={(e) => setFeatured(e.target.checked)}
                 className="rounded"
               />
-              In evidenza
+              {pt("featured")}
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -679,18 +671,18 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 onChange={(e) => setActive(e.target.checked)}
                 className="rounded"
               />
-              Attivo
+              {pt("active")}
             </label>
           </div>
         </section>
 
-        <section className="border border-border bg-white p-6 space-y-4">
+        <section className="border border-border bg-white p-4 sm:p-6 space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <h2 className="text-xl font-bold">Immagini</h2>
+            <h2 className="text-xl font-bold">{pt("images")}</h2>
             <div className="flex flex-wrap items-center gap-2">
               {!hideSaveActions && (
                 <AdminSaveActions
-                  saveLabel={isEdit ? "Salva" : "Crea"}
+                  saveLabel={isEdit ? pt("save") : pt("create")}
                   saving={loading}
                   saveFeedback={saveFeedback}
                   onSave={() => formRef.current?.requestSubmit()}
@@ -715,11 +707,11 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 }}
               >
                 <Plus size={16} className="mr-1" />
-                Aggiungi
+                {pt("addImage")}
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] gap-6 lg:gap-8 items-start">
             <div className="space-y-4 min-w-0">
               {images.map((img, index) => (
                 <div
@@ -735,7 +727,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                     <span
                       className="absolute top-3 left-3 z-10 w-4 h-4 rounded-full border-2 border-white shadow"
                       style={{ backgroundColor: imageColorHex(img.colorHex) ?? undefined }}
-                      title="Collegato a un colore"
+                      title={pt("linkedToColor")}
                     />
                   )}
                   {images.length > 1 && (
@@ -754,14 +746,14 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                         });
                       }}
                       className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
-                      title="Elimina slot immagine"
+                      title={pt("deleteImageSlot")}
                     >
                       <X size={18} />
                     </button>
                   )}
                   {images.length > 1 && (
                     <p className="text-xs uppercase tracking-widest text-muted">
-                      Immagine {index + 1}
+                      {pt("imageSlot", { number: index + 1 })}
                     </p>
                   )}
                   <AdminImageField
@@ -796,9 +788,9 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
           </div>
         </section>
 
-        <section className="border border-border bg-white p-6 space-y-4">
+        <section className="border border-border bg-white p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-xl font-bold">Varianti</h2>
+            <h2 className="text-xl font-bold">{pt("variants")}</h2>
             <div className="flex gap-2 flex-wrap">
               {variants.some((v) => v.sku) && (
                 <Button
@@ -808,7 +800,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                   onClick={handleRecalculateVariantSkus}
                 >
                   <RefreshCw size={14} className="mr-1" />
-                  Ricalcola SKU
+                  {pt("recalculateSku")}
                 </Button>
               )}
               <Button
@@ -818,17 +810,17 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 onClick={() => setVariantsOrdered([...variants, emptyVariant()])}
               >
                 <Plus size={16} className="mr-1" />
-                Aggiungi
+                {pt("addVariant")}
               </Button>
             </div>
           </div>
 
           <div className="p-4 bg-surface border border-border space-y-4">
-            <h3 className="text-sm font-semibold">Genera varianti</h3>
+            <h3 className="text-sm font-semibold">{pt("generateVariants")}</h3>
 
             <div>
               <p className="text-[11px] font-medium uppercase tracking-widest text-muted mb-2">
-                Taglie US
+                {pt("usSizes")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {US_SIZES.map((size) => (
@@ -850,13 +842,13 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
 
             <div className="space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-widest text-muted">
-                Colori
+                {pt("colors")}
               </p>
               {matrixColors.map((color, index) => (
                 <div key={index} className="flex flex-col sm:flex-row gap-2 sm:items-start">
                   <div className="flex-1 min-w-[140px]">
                     <Input
-                      label={index === 0 ? "Nome colore" : undefined}
+                      label={index === 0 ? pt("colorName") : undefined}
                       value={color.name}
                       onChange={(e) =>
                         setMatrixColors(
@@ -865,12 +857,12 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                           )
                         )
                       }
-                      placeholder="Nero"
+                      placeholder={pt("colorPlaceholder")}
                     />
                   </div>
                   <div className="flex-[2] min-w-0">
                     <ColorHexField
-                      label={index === 0 ? "Hex" : undefined}
+                      label={index === 0 ? pt("hex") : undefined}
                       value={color.hex}
                       onChange={(hex) =>
                         setMatrixColors(
@@ -903,14 +895,14 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 }
               >
                 <Plus size={14} className="mr-1" />
-                Colore
+                {pt("addColor")}
               </Button>
             </div>
 
             <div className="flex flex-wrap gap-4 items-end">
-              <div className="w-32">
+              <div className="w-full sm:w-32">
                 <Input
-                  label="Stock predefinito"
+                  label={pt("defaultStock")}
                   type="number"
                   min="0"
                   value={defaultStock}
@@ -918,14 +910,14 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 />
               </div>
               <Button type="button" onClick={() => handleGenerateMatrix(false)}>
-                Genera griglia
+                {pt("generateGrid")}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => handleGenerateMatrix(true)}
               >
-                Solo taglie
+                {pt("sizesOnly")}
               </Button>
             </div>
           </div>
@@ -934,7 +926,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
             <div key={index} className="p-4 bg-surface space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Input
-                  label="Nome"
+                  label={pt("variantName")}
                   value={variant.name}
                   onChange={(e) =>
                     setVariants(
@@ -946,7 +938,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                   required
                 />
                 <Input
-                  label="SKU"
+                  label={pt("variantSku")}
                   value={variant.sku}
                   onChange={(e) =>
                     setVariants(
@@ -958,7 +950,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                   required
                 />
                 <Input
-                  label="Taglia"
+                  label={pt("size")}
                   value={variant.size}
                   onChange={(e) =>
                     setVariants(
@@ -969,7 +961,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                   }
                 />
                 <Input
-                  label="Stock"
+                  label={pt("variantStock")}
                   type="number"
                   min="0"
                   value={variant.stock}
@@ -984,7 +976,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Input
-                  label="Colore"
+                  label={pt("color")}
                   value={variant.color}
                   onChange={(e) =>
                     setVariants(
@@ -995,7 +987,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                   }
                 />
                 <ColorHexField
-                  label="Colore hex"
+                  label={pt("colorHex")}
                   value={variant.colorHex}
                   onChange={(colorHex) =>
                     setVariants(
@@ -1008,7 +1000,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Input
-                  label="Prezzo override"
+                  label={pt("priceOverride")}
                   type="number"
                   step="0.01"
                   value={variant.price}
@@ -1030,7 +1022,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                       className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700"
                     >
                       <Trash2 size={16} />
-                      Rimuovi
+                      {pt("remove")}
                     </button>
                   )}
                 </div>
@@ -1039,25 +1031,25 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
           ))}
         </section>
 
-        <section className="border border-border bg-white p-6 space-y-4">
+        <section className="border border-border bg-white p-4 sm:p-6 space-y-4">
           <button
             type="button"
             onClick={() => setAdvancedOpen(!advancedOpen)}
             className="flex items-center justify-between w-full text-left"
           >
-            <h2 className="text-xl font-bold">Avanzate</h2>
+            <h2 className="text-xl font-bold">{pt("advanced")}</h2>
             {advancedOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </button>
           {advancedOpen && (
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Barcode"
+                  label={pt("barcode")}
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
                 />
                 <Input
-                  label="Peso (kg)"
+                  label={pt("weight")}
                   type="number"
                   step="0.01"
                   min="0"
@@ -1066,7 +1058,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
                 />
               </div>
               <Input
-                label="Tags (separati da virgola)"
+                label={pt("tags")}
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
@@ -1077,7 +1069,7 @@ const ProductForm = forwardRef<ProductFormHandle, ProductFormProps>(
         {!hideSaveActions && (
           <AdminSaveActions
             size="lg"
-            saveLabel={isEdit ? "Salva" : "Crea"}
+            saveLabel={isEdit ? pt("save") : pt("create")}
             saving={loading}
             saveFeedback={saveFeedback}
           />

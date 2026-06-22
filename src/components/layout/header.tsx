@@ -1,31 +1,141 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ShoppingBag, User, Menu, X } from "lucide-react";
 import SearchDialog from "@/components/layout/search-dialog";
 import SiteLogo from "@/components/ui/site-logo";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useCartStore } from "@/stores/cart";
+import {
+  getStoreNavigation,
+  isStoreNavActive,
+} from "@/lib/store-navigation";
+import { useI18n } from "@/components/layout/locale-provider";
+import { usePaths } from "@/hooks/use-paths";
+import { stripLocaleFromPath } from "@/lib/i18n/routing";
+import LocaleSwitcher from "@/components/layout/locale-switcher";
 
-const navigation = [
-  { name: "Nuovi Arrivi", href: "/prodotti?sort=newest" },
-  { name: "Uomo", href: "/prodotti?gender=men" },
-  { name: "Donna", href: "/prodotti?gender=women" },
-  { name: "Accessori", href: "/prodotti?category=cappelli" },
-  { name: "Offerte", href: "/prodotti?sale=true", accent: true },
-];
+function NavLinks({
+  isOverlay,
+  onNavigate,
+  className = "",
+}: {
+  isOverlay: boolean;
+  onNavigate?: () => void;
+  className?: string;
+}) {
+  const { t, locale } = useI18n();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const barePath = stripLocaleFromPath(pathname);
+  const navigation = getStoreNavigation(locale);
+
+  return (
+    <ul className={`flex items-center gap-1.5 xl:gap-2 ${className}`}>
+      {navigation.map((item) => {
+        const active =
+          barePath === "/products" && isStoreNavActive(item, searchParams);
+
+        return (
+          <li key={item.id}>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className={`relative inline-flex items-center min-h-10 px-3.5 xl:px-4 text-[11px] xl:text-xs font-bold uppercase tracking-[0.14em] xl:tracking-[0.16em] whitespace-nowrap rounded-full border transition-all duration-300 ${
+                active
+                  ? isOverlay
+                    ? "text-white bg-white/25 border-white/45 shadow-[0_4px_20px_rgba(0,0,0,0.25)]"
+                    : "text-white bg-foreground border-foreground"
+                  : isOverlay
+                    ? "text-white border-white/40 bg-black/50 backdrop-blur-md hover:bg-black/60 hover:border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.35)]"
+                    : item.accent
+                      ? "text-foreground border-border bg-white hover:border-foreground hover:bg-surface"
+                      : "text-foreground/80 border-transparent bg-surface/80 hover:text-foreground hover:bg-surface hover:border-border"
+              }`}
+            >
+              {t(item.nameKey)}
+              {item.accent && !active && (
+                <span
+                  className={`ml-1.5 text-[9px] font-bold ${
+                    isOverlay ? "text-white/70" : "text-foreground"
+                  }`}
+                >
+                  %
+                </span>
+              )}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function HeaderActions({
+  isOverlay,
+  session,
+  mounted,
+  itemCount,
+  paths,
+}: {
+  isOverlay: boolean;
+  session: ReturnType<typeof useSession>["data"];
+  mounted: boolean;
+  itemCount: number;
+  paths: ReturnType<typeof usePaths>;
+}) {
+  const { t } = useI18n();
+  const iconBtn = isOverlay
+    ? "text-white border border-white/25 bg-black/25 backdrop-blur-md hover:bg-black/40 hover:border-white/40"
+    : "text-muted border border-transparent hover:text-foreground hover:bg-surface";
+
+  return (
+    <div className="flex items-center justify-end gap-1 sm:gap-1.5">
+      <SearchDialog buttonClassName={iconBtn} />
+
+      <Link
+        href={session ? paths.account : paths.login}
+        className={`touch-target flex items-center justify-center rounded-full transition-colors ${iconBtn}`}
+        aria-label={t("nav.account")}
+      >
+        <User size={19} strokeWidth={1.5} />
+      </Link>
+
+      <Link
+        href={paths.cart}
+        className={`relative touch-target flex items-center justify-center rounded-full transition-colors ${iconBtn}`}
+        aria-label={t("nav.cart")}
+      >
+        <ShoppingBag size={19} strokeWidth={1.5} />
+        {mounted && itemCount > 0 && (
+          <span
+            className={`absolute top-0.5 right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 text-[10px] font-semibold rounded-full flex items-center justify-center leading-none ${
+              isOverlay ? "bg-white text-foreground" : "bg-foreground text-white"
+            }`}
+          >
+            {itemCount}
+          </span>
+        )}
+      </Link>
+    </div>
+  );
+}
 
 export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { t, locale } = useI18n();
+  const paths = usePaths();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const itemCount = useCartStore((state) => state.getItemCount());
+  const navigation = getStoreNavigation(locale);
 
-  const isHome = pathname === "/";
+  const barePath = stripLocaleFromPath(pathname);
+  const isHome = barePath === "/";
   const isOverlay = isHome && !scrolled;
 
   useEffect(() => {
@@ -33,11 +143,15 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 32);
+    const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    setScrolled(false);
+  }, [pathname]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -50,143 +164,60 @@ export default function Header() {
     };
   }, [mobileMenuOpen]);
 
-  const navLinkClass = isOverlay
-    ? "text-white/75 hover:text-white"
-    : "text-muted hover:text-foreground";
-
-  const iconButtonClass = isOverlay
-    ? "text-white/80 hover:text-white hover:bg-white/10"
-    : "text-muted hover:text-foreground hover:bg-surface";
-
-  const renderNavLinks = () =>
-    navigation.map((item) => (
-      <Link
-        key={item.name}
-        href={item.href}
-        className={`group relative py-1 text-[10px] font-medium uppercase tracking-[0.2em] transition-colors duration-300 whitespace-nowrap ${navLinkClass} ${
-          isOverlay ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]" : ""
-        } ${item.accent && !isOverlay ? "text-foreground" : ""} ${
-          item.accent && isOverlay ? "text-white" : ""
-        }`}
-      >
-        {item.name}
-        <span
-          className={`absolute -bottom-0.5 left-0 h-px w-0 transition-all duration-300 ease-out group-hover:w-full ${
-            isOverlay ? "bg-white" : "bg-foreground"
-          }`}
-        />
-      </Link>
-    ));
+  const menuBtnClass = isOverlay
+    ? "text-white border border-white/25 bg-black/25 backdrop-blur-md hover:bg-black/40"
+    : "text-muted border border-transparent hover:text-foreground hover:bg-surface";
 
   return (
-    <header
-      className={`z-50 w-full transition-[background-color,border-color,box-shadow] duration-500 ease-out ${
-        isHome ? "fixed top-0 left-0 right-0" : "sticky top-0"
-      } ${
-        isOverlay
-          ? "border-none bg-transparent"
-          : scrolled
-            ? "glass-header border-b border-black/[0.06] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)]"
-            : "border-b border-border/50 bg-white"
-      }`}
-    >
-      <div className="container-wide">
-        <div className="relative flex items-center justify-between h-[4.25rem]">
-          {isOverlay ? (
-            <div className="flex items-center gap-5 xl:gap-8 z-10 min-w-0 flex-1 pr-4">
-              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <button
-                  type="button"
-                  className={`lg:hidden p-2 -ml-2 rounded-full transition-colors ${iconButtonClass}`}
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  aria-label="Menu"
-                  aria-expanded={mobileMenuOpen}
-                >
-                  {mobileMenuOpen ? (
-                    <X size={20} strokeWidth={1.5} />
-                  ) : (
-                    <Menu size={20} strokeWidth={1.5} />
-                  )}
-                </button>
-
-                <Link
-                  href="/"
-                  className="shrink-0 text-white transition-colors duration-300"
-                  aria-label="RewindDrop — Home"
-                >
-                  <SiteLogo />
-                </Link>
-              </div>
-
-              <nav
-                className="hidden lg:flex items-center gap-5 xl:gap-6 min-w-0"
-                aria-label="Navigazione principale"
-              >
-                {renderNavLinks()}
-              </nav>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 sm:gap-3 z-10 min-w-0">
-                <button
-                  type="button"
-                  className={`lg:hidden p-2 -ml-2 rounded-full transition-colors ${iconButtonClass}`}
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  aria-label="Menu"
-                  aria-expanded={mobileMenuOpen}
-                >
-                  {mobileMenuOpen ? (
-                    <X size={20} strokeWidth={1.5} />
-                  ) : (
-                    <Menu size={20} strokeWidth={1.5} />
-                  )}
-                </button>
-
-                <Link
-                  href="/"
-                  className="shrink-0 text-foreground transition-colors duration-300"
-                  aria-label="RewindDrop — Home"
-                >
-                  <SiteLogo />
-                </Link>
-              </div>
-
-              <nav
-                className="hidden lg:flex items-center gap-6 xl:gap-8 absolute left-1/2 -translate-x-1/2"
-                aria-label="Navigazione principale"
-              >
-                {renderNavLinks()}
-              </nav>
-            </>
-          )}
-
-          <div className="flex items-center gap-0.5 z-10 shrink-0">
-            <SearchDialog buttonClassName={iconButtonClass} />
-
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-[background-color,border-color,backdrop-filter] duration-500 ease-out ${
+          isOverlay
+            ? "bg-transparent border-b border-transparent"
+            : "bg-white/95 backdrop-blur-md border-b border-border/40"
+        }`}
+      >
+        <div className="container-wide">
+          <div className="grid grid-cols-[1fr_auto] lg:grid-cols-[1fr_auto_1fr] items-center h-16 lg:h-[5.25rem] gap-3 lg:gap-6">
+          <div className="flex items-center min-w-0">
             <Link
-              href={session ? "/account" : "/login"}
-              className={`p-2 rounded-full transition-colors ${iconButtonClass}`}
-              aria-label="Account"
+              href={paths.home}
+              className={`shrink-0 transition-opacity duration-300 hover:opacity-90 ${
+                isOverlay ? "text-white" : "text-foreground"
+              }`}
+              aria-label="RewindDrop — Home"
             >
-              <User size={18} strokeWidth={1.5} />
+              <SiteLogo size="nav" />
             </Link>
+          </div>
 
-            <Link
-              href="/carrello"
-              className={`relative p-2 rounded-full transition-colors ${iconButtonClass}`}
-              aria-label="Carrello"
+          <nav className="hidden lg:flex justify-center" aria-label="Main navigation">
+            <Suspense fallback={null}>
+              <NavLinks isOverlay={isOverlay} />
+            </Suspense>
+          </nav>
+
+          <div className="flex items-center justify-end gap-1 sm:gap-1.5">
+            <HeaderActions
+              isOverlay={isOverlay}
+              session={session}
+              mounted={mounted}
+              itemCount={itemCount}
+              paths={paths}
+            />
+            <button
+              type="button"
+              className={`lg:hidden touch-target flex items-center justify-center rounded-full transition-colors ${menuBtnClass}`}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={t("nav.menu")}
+              aria-expanded={mobileMenuOpen}
             >
-              <ShoppingBag size={18} strokeWidth={1.5} />
-              {mounted && itemCount > 0 && (
-                <span
-                  className={`absolute top-0.5 right-0.5 min-w-[1rem] h-4 px-1 text-[10px] font-medium rounded-full flex items-center justify-center ${
-                    isOverlay ? "bg-white text-foreground" : "bg-foreground text-white"
-                  }`}
-                >
-                  {itemCount}
-                </span>
+              {mobileMenuOpen ? (
+                <X size={22} strokeWidth={1.5} />
+              ) : (
+                <Menu size={22} strokeWidth={1.5} />
               )}
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -195,36 +226,77 @@ export default function Header() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-black/20 lg:hidden animate-fade-in"
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden animate-fade-in backdrop-blur-[2px]"
             onClick={() => setMobileMenuOpen(false)}
-            aria-label="Chiudi menu"
+            aria-label={t("common.close")}
           />
-          <div className="lg:hidden relative z-50 border-t border-black/5 bg-white/95 backdrop-blur-xl animate-slide-down">
-            <nav className="container-wide py-5" aria-label="Menu mobile">
-              <ul className="space-y-0">
+          <div className="lg:hidden fixed inset-y-0 right-0 z-50 w-[min(100%,20rem)] flex flex-col bg-white shadow-2xl animate-slide-in-right safe-top safe-bottom">
+            <div className="flex items-center justify-between px-5 h-16 border-b border-border/60">
+              <SiteLogo size="compact" />
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="touch-target flex items-center justify-center rounded-full text-muted hover:text-foreground hover:bg-surface"
+                aria-label={t("common.close")}
+              >
+                <X size={22} strokeWidth={1.5} />
+              </button>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto px-4 py-6" aria-label="Mobile menu">
+              <p className="px-3 mb-3 text-[10px] uppercase tracking-[0.3em] text-muted">
+                {t("nav.menu")}
+              </p>
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    href={paths.products}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center min-h-12 px-3 text-sm uppercase tracking-[0.15em] text-muted hover:text-foreground hover:bg-surface rounded-lg transition-colors"
+                  >
+                    {t("nav.all")}
+                  </Link>
+                </li>
                 {navigation.map((item) => (
-                  <li key={item.name}>
+                  <li key={item.id}>
                     <Link
                       href={item.href}
-                      className={`flex items-center justify-between py-3.5 text-xs uppercase tracking-[0.2em] transition-colors border-b border-border/40 last:border-0 ${
-                        item.accent
-                          ? "text-foreground font-medium"
-                          : "text-muted hover:text-foreground"
-                      }`}
                       onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center justify-between min-h-12 px-3 text-sm uppercase tracking-[0.15em] rounded-lg transition-colors ${
+                        item.accent
+                          ? "text-foreground font-medium hover:bg-surface"
+                          : "text-muted hover:text-foreground hover:bg-surface"
+                      }`}
                     >
-                      {item.name}
+                      {t(item.nameKey)}
                       {item.accent && (
-                        <span className="text-[9px] tracking-widest text-muted">Sale</span>
+                        <span className="text-[10px] tracking-widest text-muted">{t("nav.sale")}</span>
                       )}
                     </Link>
                   </li>
                 ))}
               </ul>
             </nav>
+
+            <div className="border-t border-border/60 px-5 py-5 space-y-4 safe-bottom">
+              <Link
+                href={session ? paths.account : paths.login}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 min-h-11 text-xs uppercase tracking-[0.18em] text-muted hover:text-foreground"
+              >
+                <User size={17} strokeWidth={1.5} />
+                {session ? t("nav.myAccount") : t("nav.signIn")}
+              </Link>
+              <LocaleSwitcher className="w-full justify-center" />
+            </div>
           </div>
         </>
       )}
-    </header>
+      </header>
+
+      {!isHome && (
+        <div className="h-16 lg:h-[5.25rem] shrink-0" aria-hidden />
+      )}
+    </>
   );
 }

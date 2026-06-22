@@ -18,6 +18,7 @@ import {
 } from "@/lib/homepage-banner-config";
 import { normalizeImageFit } from "@/lib/image-fit";
 import { normalizeImageUrl } from "@/lib/image-url";
+import { useAdminT } from "@/components/admin/admin-locale-provider";
 
 function toForm(row: {
   title: string;
@@ -43,10 +44,13 @@ function formatApiError(data: unknown, status: number): string {
     if (typeof err === "string") return err;
     if (err && typeof err === "object") return JSON.stringify(err);
   }
-  return `Errore caricamento (${status})`;
+  return `Error (${status})`;
 }
 
 export default function AdminHomepagePage() {
+  const t = useAdminT();
+  const ht = (k: string) => t(`admin.homepage.${k}`);
+
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
   const [categoryForms, setCategoryForms] = useState(buildDefaultCategoryForms);
@@ -109,7 +113,7 @@ export default function AdminHomepagePage() {
       setFetchError(
         err instanceof Error
           ? err.message
-          : "Impossibile caricare i banner dal server."
+          : ht("error")
       );
     } finally {
       setLoading(false);
@@ -122,7 +126,7 @@ export default function AdminHomepagePage() {
 
   const saveCategory = async (slug: HomepageCategorySlug) => {
     const form = categoryForms[slug];
-    if (!form) throw new Error("Banner non trovato");
+    if (!form) throw new Error("Banner not found");
     setSavingKey(`cat-${slug}`);
     try {
       const res = await fetch(
@@ -149,7 +153,7 @@ export default function AdminHomepagePage() {
 
   const saveSpot = async (key: HomeSpotKey) => {
     const form = spotForms[key];
-    if (!form) throw new Error("Banner non trovato");
+    if (!form) throw new Error("Banner not found");
     setSavingKey(`spot-${key}`);
     try {
       const res = await fetch(
@@ -178,35 +182,33 @@ export default function AdminHomepagePage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Homepage"
-        description="Modifica i 5 banner editoriali visibili in homepage (immagine, titolo, sottotitolo)."
+        title={ht("title")}
+        description={ht("description")}
       />
 
       {loading && (
-        <p className="text-sm text-muted">Sincronizzazione con il database…</p>
+        <p className="text-sm text-muted">{ht("syncing")}</p>
       )}
 
       {fetchError && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <p className="font-medium">Attenzione</p>
+          <p className="font-medium">{ht("warning")}</p>
           <p className="mt-1">{fetchError}</p>
           <p className="mt-2 text-amber-800">
-            Puoi comunque modificare i banner qui sotto. Se il salvataggio fallisce,
-            esegui le migration del database (<code className="text-xs">npm run db:push</code>{" "}
-            in locale o <code className="text-xs">prisma migrate deploy</code> in produzione).
+            {ht("warningDesc")}
           </p>
         </div>
       )}
 
       <div className="space-y-6">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-muted">
-          Categorie in evidenza
+          {ht("featuredCategories")}
         </h2>
         {HOMEPAGE_CATEGORY_SLUGS.map((slug) => (
           <HomeBannerEditor
             key={slug}
             label={CATEGORY_LABELS[slug]}
-            description="Il link punta automaticamente alla categoria."
+            description={ht("categoryAutoLink")}
             values={categoryForms[slug]}
             onChange={(values) =>
               setCategoryForms((prev) => ({ ...prev, [slug]: values }))
@@ -220,7 +222,7 @@ export default function AdminHomepagePage() {
 
       <div className="space-y-6">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-muted">
-          Lookbook & dettagli
+          {ht("lookbookDetails")}
         </h2>
         {HOME_SPOT_KEYS.map((key) => (
           <HomeBannerEditor

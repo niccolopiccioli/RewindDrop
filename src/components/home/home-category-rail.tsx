@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import MediaImage from "@/components/ui/media-image";
 import ScrollReveal from "@/components/home/scroll-reveal";
+import { usePaths } from "@/hooks/use-paths";
+import { useI18n } from "@/components/layout/locale-provider";
 
 type CategoryRailItem = {
   name: string;
@@ -23,6 +27,8 @@ export default function HomeCategoryRail({
 }: {
   categories: CategoryRailItem[];
 }) {
+  const paths = usePaths();
+  const { t } = useI18n();
   const ordered = HIGHLIGHT_SLUGS.map((slug) =>
     categories.find((category) => category.slug === slug)
   ).filter(Boolean) as CategoryRailItem[];
@@ -34,15 +40,15 @@ export default function HomeCategoryRail({
       <div className="container-wide mb-6 md:mb-8">
         <ScrollReveal>
           <p className="text-[10px] uppercase tracking-[0.35em] text-muted mb-2">
-            Esplora
+            {t("home.explore")}
           </p>
           <h2 className="text-display text-xl sm:text-2xl font-semibold">
-            Scegli la tua categoria
+            {t("home.pickCategory")}
           </h2>
         </ScrollReveal>
       </div>
 
-      <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-8 pb-2 scrollbar-none">
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-8 pb-2 scrollbar-none overscroll-x-contain">
         {ordered.map((category, index) => (
           <ScrollReveal
             key={category.slug}
@@ -51,7 +57,7 @@ export default function HomeCategoryRail({
             className="snap-start shrink-0"
           >
             <Link
-              href={`/prodotti?category=${category.slug}`}
+              href={paths.productsCategory(category.slug)}
               className="group relative block w-[68vw] sm:w-[280px] md:w-[300px] aspect-[3/4] overflow-hidden bg-foreground card-hover-lift"
             >
               <MediaImage

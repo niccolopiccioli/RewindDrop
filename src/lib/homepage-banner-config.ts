@@ -51,14 +51,14 @@ export const SPOT_DEFAULTS: Record<
   lookbook: {
     title: "Lookbook",
     subtitle: "Milano",
-    href: "/prodotti",
+    href: "/products",
     image: EDITORIAL_IMAGES.lookbook,
     imageAlt: "Ritratto in bianco e nero di donna con maglia a maniche lunghe",
   },
   details: {
     title: "Dettagli",
     subtitle: "Texture & materiali",
-    href: "/prodotti",
+    href: "/products",
     image: EDITORIAL_IMAGES.details,
     imageAlt: "Manichino davanti alle vetrine",
   },
@@ -80,7 +80,7 @@ export function defaultCategoryForm(slug: HomepageCategorySlug) {
   return {
     title: d.title,
     subtitle: d.subtitle,
-    href: `/prodotti?category=${slug}`,
+    href: `/products?category=${slug}`,
     image: d.image,
     imageAlt: d.imageAlt,
     objectFit: "cover" as ImageFit,

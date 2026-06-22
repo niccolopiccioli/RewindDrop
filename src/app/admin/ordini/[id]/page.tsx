@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import PageHeader from "@/components/admin/page-header";
 import StatusBadge, {
-  orderStatusLabels,
   orderStatusVariant,
 } from "@/components/admin/status-badge";
+import { useAdminT } from "@/components/admin/admin-locale-provider";
 
 interface OrderItem {
   id: string;
@@ -42,9 +42,24 @@ const statusOptions = [
   "REFUNDED",
 ];
 
+function getStatusLabel(t: ReturnType<typeof useAdminT>, status: string): string {
+  const map: Record<string, string> = {
+    PENDING: t("admin.orders.pending"),
+    PROCESSING: t("admin.orders.processing"),
+    PAID: t("admin.orders.paid"),
+    SHIPPED: t("admin.orders.shipped"),
+    DELIVERED: t("admin.orders.delivered"),
+    CANCELLED: t("admin.orders.cancelled"),
+    REFUNDED: t("admin.orders.refunded"),
+  };
+  return map[status] || status;
+}
+
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useAdminT();
+  const ot = (k: string, vars?: Record<string, string | number>) => t(`admin.orders.${k}`, vars);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -76,30 +91,30 @@ export default function OrderDetailPage() {
     setUpdating(false);
   };
 
-  if (loading) return <p className="text-gray-500">Caricamento...</p>;
-  if (!order) return <p className="text-red-600">Ordine non trovato</p>;
+  if (loading) return <p className="text-gray-500">{t("admin.common.loading")}</p>;
+  if (!order) return <p className="text-red-600">{ot("orderNotFound")}</p>;
 
   const addr = order.shippingAddr;
 
   return (
     <div>
       <PageHeader
-        title={`Ordine ${order.number}`}
-        description={`${new Date(order.createdAt).toLocaleString("it-IT")} — ${order.user.name || order.user.email}`}
+        title={ot("orderNumber", { number: order.number })}
+        description={ot("orderDate", { date: new Date(order.createdAt).toLocaleString(), customer: order.user.name || order.user.email })}
         backHref="/admin/ordini"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="border border-gray-200 rounded-2xl p-6">
-            <h2 className="text-lg font-bold mb-4">Articoli</h2>
+          <div className="border border-gray-200 rounded-2xl p-4 sm:p-6">
+            <h2 className="text-lg font-bold mb-4">{ot("items")}</h2>
             <div className="space-y-3">
               {order.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-2 border-b border-gray-100 last:border-0"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-gray-500">
                       SKU: {item.sku}
@@ -107,7 +122,7 @@ export default function OrderDetailPage() {
                       {item.variant.color && ` · ${item.variant.color}`}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right shrink-0">
                     <p>
                       {item.quantity} × €{item.price.toFixed(2)}
                     </p>
@@ -118,8 +133,8 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          <div className="border border-gray-200 rounded-2xl p-6">
-            <h2 className="text-lg font-bold mb-4">Indirizzo di spedizione</h2>
+          <div className="border border-gray-200 rounded-2xl p-4 sm:p-6">
+            <h2 className="text-lg font-bold mb-4">{ot("shippingAddr")}</h2>
             <div className="text-sm text-gray-700 space-y-1">
               <p className="font-medium">{addr.name}</p>
               <p>{addr.street}</p>
@@ -127,35 +142,35 @@ export default function OrderDetailPage() {
                 {addr.postalCode} {addr.city}
                 {addr.province && ` (${addr.province})`}
               </p>
-              {addr.phone && <p>Tel: {addr.phone}</p>}
+              {addr.phone && <p>{ot("tel", { number: addr.phone })}</p>}
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-gray-50 rounded-2xl p-6">
-            <h2 className="text-lg font-bold mb-4">Riepilogo</h2>
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <h2 className="text-lg font-bold mb-4">{ot("summary")}</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Subtotale</span>
+                <span className="text-gray-600">{ot("subtotal")}</span>
                 <span>€{order.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Spedizione</span>
+                <span className="text-gray-600">{ot("shipping")}</span>
                 <span>€{order.shipping.toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-lg">
-                <span>Totale</span>
+                <span>{ot("totalLabel")}</span>
                 <span>€{order.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          <div className="border border-gray-200 rounded-2xl p-6">
-            <h2 className="text-lg font-bold mb-4">Stato ordine</h2>
+          <div className="border border-gray-200 rounded-2xl p-4 sm:p-6">
+            <h2 className="text-lg font-bold mb-4">{ot("orderStatus")}</h2>
             <div className="mb-4">
               <StatusBadge
-                label={orderStatusLabels[order.status] || order.status}
+                label={getStatusLabel(t, order.status)}
                 variant={orderStatusVariant(order.status)}
               />
             </div>
@@ -163,11 +178,11 @@ export default function OrderDetailPage() {
               value={order.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={updating}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
             >
               {statusOptions.map((s) => (
                 <option key={s} value={s}>
-                  {orderStatusLabels[s] || s}
+                  {getStatusLabel(t, s)}
                 </option>
               ))}
             </select>

@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import MediaImage from "@/components/ui/media-image";
 import { normalizeImageFit } from "@/lib/image-fit";
 import type { HomepageBanner } from "@/lib/homepage-banners";
 import ScrollReveal from "@/components/home/scroll-reveal";
+import { useI18n } from "@/components/layout/locale-provider";
 
 export default function HomeEditorialMosaic({
   editorialSplit,
@@ -13,6 +16,7 @@ export default function HomeEditorialMosaic({
   lookbookWide: HomepageBanner;
   lookbookGrid: HomepageBanner[];
 }) {
+  const { t } = useI18n();
   const [left, right] = editorialSplit;
   const [spotLeft, spotRight] = lookbookGrid;
 
@@ -21,10 +25,10 @@ export default function HomeEditorialMosaic({
       <div className="container-wide">
         <ScrollReveal className="mb-8 md:mb-12">
           <p className="text-[10px] uppercase tracking-[0.35em] text-muted mb-2">
-            Editorial
+            {t("home.editorialEyebrow")}
           </p>
           <h2 className="text-display text-2xl sm:text-3xl font-semibold">
-            Lookbook & mood
+            {t("home.editorialTitle")}
           </h2>
         </ScrollReveal>
 

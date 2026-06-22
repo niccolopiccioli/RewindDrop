@@ -202,19 +202,23 @@ export default function ProductColorGallery({
             >
               <ChevronRight size={18} />
             </button>
-            <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 flex items-center gap-1.5">
+            <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 flex items-center gap-0.5">
               {images.map((image, index) => (
                 <button
                   key={image.id}
                   type="button"
                   aria-label={`Vai all'immagine ${index + 1}`}
                   onClick={() => goTo(index, index > selectedImage ? 1 : -1, true)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    selectedImage === index
-                      ? "w-6 bg-white"
-                      : "w-1.5 bg-white/50 hover:bg-white/80"
-                  }`}
-                />
+                  className="touch-target flex items-center justify-center"
+                >
+                  <span
+                    className={`h-1.5 rounded-full transition-all ${
+                      selectedImage === index
+                        ? "w-6 bg-white"
+                        : "w-1.5 bg-white/50"
+                    }`}
+                  />
+                </button>
               ))}
             </div>
             <span className="absolute top-4 right-4 z-10 bg-black/50 px-2 py-1 text-[10px] uppercase tracking-widest text-white">

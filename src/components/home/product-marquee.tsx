@@ -4,6 +4,7 @@ import ProductCard from "@/components/product/product-card";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import ScrollReveal from "@/components/home/scroll-reveal";
+import { useI18n } from "@/components/layout/locale-provider";
 
 export interface HomeCarouselProduct {
   id: string;
@@ -41,6 +42,7 @@ export default function ProductMarquee({
   reverse?: boolean;
   variant?: "light" | "dark";
 }) {
+  const { t } = useI18n();
   if (products.length === 0) return null;
 
   const loop = [...products, ...products];
@@ -62,7 +64,7 @@ export default function ProductMarquee({
                   isDark ? "text-background/45" : "text-muted"
                 }`}
               >
-                In movimento
+                {t("home.inMotion")}
               </p>
               <h2 className="text-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">
                 {title}
@@ -76,7 +78,7 @@ export default function ProductMarquee({
                   : "text-muted hover:text-foreground"
               }`}
             >
-              Vedi tutti
+              {t("common.viewAll")}
               <ArrowRight size={14} />
             </Link>
           </div>

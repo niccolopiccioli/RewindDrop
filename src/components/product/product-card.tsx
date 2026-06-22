@@ -6,6 +6,8 @@ import ProductBadge from "@/components/ui/product-badge";
 import ProductCardColorCycler from "@/components/product/product-card-color-cycler";
 import SizePills from "@/components/ui/size-pills";
 import { normalizeImageFit } from "@/lib/image-fit";
+import { usePaths } from "@/hooks/use-paths";
+import { useI18n } from "@/components/layout/locale-provider";
 import { uniqueSortedSizes } from "@/lib/sku";
 
 interface ProductCardProps {
@@ -40,6 +42,8 @@ export default function ProductCard({
   showSizes,
   cycleColors = false,
 }: ProductCardProps) {
+  const paths = usePaths();
+  const { t } = useI18n();
   const price = Number(product.price);
   const comparePrice = product.comparePrice
     ? Number(product.comparePrice)
@@ -60,16 +64,16 @@ export default function ProductCard({
     badge === "sale" && discount
       ? `-${discount}%`
       : badge === "new"
-      ? "Nuovo"
+      ? t("common.new")
       : product.featured
-      ? "In evidenza"
+      ? t("product.featured")
       : null;
 
   const primaryImage = product.images[0];
 
   return (
     <article className="group">
-      <Link href={`/prodotti/${product.slug}`} className="block">
+      <Link href={paths.product(product.slug)} className="block">
         {cycleColors ? (
           <ProductCardColorCycler
             productId={product.id}
@@ -106,7 +110,7 @@ export default function ProductCard({
                 className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/40 to-transparent ${
                   showSizes
                     ? "opacity-100"
-                    : "opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    : "opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
                 }`}
               >
                 <SizePills sizes={availableSizes.slice(0, 6)} />
@@ -117,7 +121,7 @@ export default function ProductCard({
       </Link>
 
       <div className="space-y-1">
-        <Link href={`/prodotti/${product.slug}`}>
+        <Link href={paths.product(product.slug)}>
           <h3 className="text-xs uppercase tracking-wide text-foreground line-clamp-1 group-hover:text-muted transition-colors duration-300">
             {product.name}
           </h3>

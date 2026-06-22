@@ -2,8 +2,7 @@ import { SITE_NAME } from "@/lib/site";
 
 interface SiteLogoProps {
   className?: string;
-  /** default = header wordmark; compact = smaller contexts */
-  size?: "default" | "compact" | "hero";
+  size?: "default" | "nav" | "compact" | "hero";
 }
 
 export default function SiteLogo({
@@ -13,9 +12,11 @@ export default function SiteLogo({
   const sizeClass =
     size === "hero"
       ? "text-3xl sm:text-4xl"
-      : size === "compact"
-        ? "text-base sm:text-lg"
-        : "text-2xl sm:text-[1.85rem] md:text-3xl tracking-[-0.04em]";
+      : size === "nav"
+        ? "text-[1.65rem] sm:text-[1.85rem] lg:text-[2.35rem] xl:text-[2.55rem] tracking-[-0.045em]"
+        : size === "compact"
+          ? "text-base sm:text-lg"
+          : "text-2xl sm:text-[1.85rem] md:text-3xl tracking-[-0.04em]";
 
   return (
     <span
@@ -23,7 +24,9 @@ export default function SiteLogo({
       aria-label={SITE_NAME}
     >
       <span>Rewind</span>
-      <span className="font-normal italic tracking-[-0.04em] opacity-90">Drop</span>
+      <span className="font-normal italic tracking-[-0.04em] opacity-90">
+        Drop
+      </span>
     </span>
   );
 }

@@ -1,14 +1,20 @@
-const ITEMS = [
-  "Nuovi arrivi",
-  "Drop limitati",
-  "Sneakers heat",
-  "Streetwear curato",
-  "Milano 2026",
-  "RewindDrop",
-];
+"use client";
+
+import { useI18n } from "@/components/layout/locale-provider";
 
 export default function HomeTicker() {
-  const loop = [...ITEMS, ...ITEMS];
+  const { t } = useI18n();
+
+  const items = [
+    t("home.tickerNewArrivals"),
+    t("home.tickerLimitedDrops"),
+    t("home.tickerSneakers"),
+    t("home.tickerCurated"),
+    t("home.tickerMilano"),
+    "RewindDrop",
+  ];
+
+  const loop = [...items, ...items];
 
   return (
     <div

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useAdminT } from "./admin-locale-provider";
 
 type AdminBackButtonProps = {
   href?: string;
@@ -10,8 +13,12 @@ type AdminBackButtonProps = {
 export default function AdminBackButton({
   href,
   onClick,
-  label = "Torna indietro",
+  label,
 }: AdminBackButtonProps) {
+  const t = useAdminT();
+
+  const resolvedLabel = label || t("admin.common.backToList");
+
   const className =
     "inline-flex items-center justify-center rounded-lg border border-border p-2 text-muted hover:text-foreground hover:bg-surface transition-colors flex-shrink-0";
 
@@ -20,7 +27,7 @@ export default function AdminBackButton({
       <Link
         href={href}
         className={className}
-        aria-label={label}
+        aria-label={resolvedLabel}
         onClick={(event) => {
           if (onClick) {
             event.preventDefault();
@@ -38,7 +45,7 @@ export default function AdminBackButton({
       type="button"
       onClick={onClick}
       className={className}
-      aria-label={label}
+      aria-label={resolvedLabel}
     >
       <ArrowLeft size={18} />
     </button>

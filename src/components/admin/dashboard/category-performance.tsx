@@ -1,20 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { formatEuro, type CategoryMetric } from "@/lib/admin-analytics";
+import { formatEuro } from "@/lib/format";
+import type { CategoryMetric } from "@/lib/admin-analytics";
+import { useAdminT } from "@/components/admin/admin-locale-provider";
 
 export default function CategoryPerformance({
   data,
 }: {
   data: CategoryMetric[];
 }) {
+  const t = useAdminT();
+  const dt = (k: string) => t(`admin.dashboard.${k}`);
   const maxRevenue = Math.max(...data.map((item) => item.revenue), 1);
 
   return (
     <section className="border border-border bg-white p-6 h-full">
-      <h2 className="text-lg font-semibold">Performance categorie</h2>
-      <p className="text-sm text-muted mt-1">Fatturato per categoria</p>
+      <h2 className="text-lg font-semibold">{dt("categoryPerf")}</h2>
+      <p className="text-sm text-muted mt-1">{dt("categoryPerfSub")}</p>
 
       {data.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">Nessun dato di vendita disponibile.</p>
+        <p className="mt-6 text-sm text-muted">{dt("noSalesData")}</p>
       ) : (
         <div className="mt-6 space-y-4">
           {data.map((item) => (

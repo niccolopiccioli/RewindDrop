@@ -6,6 +6,9 @@ const unsplash = (id: string, w = 800) =>
 export const HERO_IMAGE =
   "https://images.unsplash.com/photo-1743764180148-b712e5293800?w=1920&h=1200&fit=crop&crop=entropy&q=80&auto=format";
 
+export const LOGIN_IMAGE =
+  "https://images.unsplash.com/photo-1778143365963-af7fccd9a276?w=1920&q=85&auto=format&fit=max";
+
 export const CATEGORY_IMAGES = {
   "t-shirts": unsplash("photo-1583743814966-8936f5b7be1a"),
   felpe: unsplash("photo-1556828686-fc7a0d657fb1"),

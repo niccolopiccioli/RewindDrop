@@ -1,4 +1,7 @@
+"use client";
+
 import type { StatusMetric } from "@/lib/admin-analytics";
+import { useAdminT } from "@/components/admin/admin-locale-provider";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-amber-500",
@@ -11,12 +14,14 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function OrderStatusChart({ data }: { data: StatusMetric[] }) {
+  const t = useAdminT();
+  const dt = (k: string) => t(`admin.dashboard.${k}`);
   const total = data.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <section className="border border-border bg-white p-6 h-full">
-      <h2 className="text-lg font-semibold">Stato ordini</h2>
-      <p className="text-sm text-muted mt-1">Distribuzione per stato operativo</p>
+      <h2 className="text-lg font-semibold">{dt("orderStatus")}</h2>
+      <p className="text-sm text-muted mt-1">{dt("orderStatusSub")}</p>
 
       <div className="mt-6 space-y-4">
         {data.map((item) => {

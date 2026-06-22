@@ -46,7 +46,11 @@ export function isLocalImagePath(src: string): boolean {
 }
 
 /** Downscale remote CDN URLs for faster loads on cards, banners, and hero. */
-export function optimizeImageUrl(src: string, width = 800): string {
+export function optimizeImageUrl(
+  src: string,
+  width = 800,
+  options?: { fit?: "crop" | "max" }
+): string {
   const url = normalizeImageUrl(src);
   if (!url) return url;
 
@@ -56,7 +60,14 @@ export function optimizeImageUrl(src: string, width = 800): string {
       parsed.searchParams.set("w", String(width));
       parsed.searchParams.set("q", width > 900 ? "80" : "75");
       parsed.searchParams.set("auto", "format");
-      parsed.searchParams.set("fit", "crop");
+      const fit = options?.fit ?? "crop";
+      if (fit === "max") {
+        parsed.searchParams.set("fit", "max");
+        parsed.searchParams.delete("h");
+        parsed.searchParams.delete("crop");
+      } else {
+        parsed.searchParams.set("fit", "crop");
+      }
       return parsed.toString();
     }
 

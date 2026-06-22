@@ -25,6 +25,8 @@ type MediaImageProps = {
   priority?: boolean;
   loading?: "lazy" | "eager";
   imageWidth?: number;
+  /** Unsplash: max = full frame (object-position works); crop = server-side crop */
+  imageFit?: "crop" | "max";
   width?: number;
   height?: number;
   /** cover = riempie il contenitore; contain = mostra tutta l'immagine */
@@ -54,7 +56,9 @@ function resolveFit(
 }
 
 function fitClasses(fit: ImageFit, className: string) {
-  const hasCustomPosition = /\bobject-(top|bottom|left|right|\[)/.test(className);
+  const hasCustomPosition =
+    /\bobject-(top|bottom|left|right|\[)/.test(className) ||
+    /\bhero-bg-image\b/.test(className);
   const base = fit === "contain" ? "object-contain" : "object-cover";
   const position = hasCustomPosition ? "" : " object-center";
   return `${base}${position}`.trim();
@@ -88,6 +92,7 @@ export default function MediaImage({
   priority,
   loading,
   imageWidth,
+  imageFit,
   placeholderClassName = "",
   iconClassName = "w-8 h-8",
   fit,
@@ -118,7 +123,8 @@ export default function MediaImage({
 
   const imageSrc = optimizeImageUrl(
     normalizeImageUrl(src!.trim()),
-    imageWidth ?? (priority ? 1200 : 800)
+    imageWidth ?? (priority ? 1200 : 800),
+    { fit: imageFit }
   );
   const external = isExternalImageUrl(imageSrc) || !isLocalImage(imageSrc);
   const resolvedLoading = loading ?? (priority ? "eager" : "lazy");

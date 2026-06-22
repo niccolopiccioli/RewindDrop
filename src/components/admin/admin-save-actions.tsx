@@ -1,4 +1,7 @@
+"use client";
+
 import Button from "@/components/ui/button";
+import { useAdminT } from "./admin-locale-provider";
 
 export type SaveFeedback = {
   type: "success" | "error";
@@ -16,14 +19,20 @@ type AdminSaveActionsProps = {
 };
 
 export default function AdminSaveActions({
-  saveLabel = "Salva",
-  cancelLabel = "Annulla",
+  saveLabel,
+  cancelLabel,
   onCancel,
   saving = false,
   saveFeedback = null,
   onSave,
   size = "sm",
 }: AdminSaveActionsProps) {
+  const t = useAdminT();
+  const ct = (k: string) => t(`admin.common.${k}`);
+
+  const resolvedSave = saveLabel || ct("save");
+  const resolvedCancel = cancelLabel || ct("cancel");
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       {saveFeedback && (
@@ -37,16 +46,16 @@ export default function AdminSaveActions({
       )}
       {onSave ? (
         <Button type="button" size={size} loading={saving} onClick={() => void onSave()}>
-          {saveLabel}
+          {resolvedSave}
         </Button>
       ) : (
         <Button type="submit" size={size} loading={saving}>
-          {saveLabel}
+          {resolvedSave}
         </Button>
       )}
       {onCancel && (
         <Button type="button" variant="outline" size={size} onClick={onCancel}>
-          {cancelLabel}
+          {resolvedCancel}
         </Button>
       )}
     </div>

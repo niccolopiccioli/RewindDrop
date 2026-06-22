@@ -8,6 +8,7 @@ import DataTable, {
 } from "@/components/admin/data-table";
 import StatusBadge from "@/components/admin/status-badge";
 import Button from "@/components/ui/button";
+import { useAdminT } from "@/components/admin/admin-locale-provider";
 
 type Variant = {
   id: string;
@@ -19,6 +20,8 @@ type Variant = {
 };
 
 export default function InventarioPage() {
+  const t = useAdminT();
+  const it = (k: string) => t(`admin.inventory.${k}`);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,46 +47,48 @@ export default function InventarioPage() {
 
   return (
     <div>
-      <PageHeader title="Inventario" description="Varianti con stock sotto soglia" />
+      <PageHeader title={it("title")} description={it("description")} />
       {loading ? (
-        <p className="text-sm text-muted">Caricamento...</p>
+        <p className="text-sm text-muted">{t("admin.common.loading")}</p>
       ) : variants.length === 0 ? (
-        <p className="text-sm text-muted">Nessuna variante sotto soglia.</p>
+        <p className="text-sm text-muted">{it("noVariants")}</p>
       ) : (
-        <DataTable>
-          <table className="w-full">
-            <DataTableHead>
-              <DataTableHeaderCell>Prodotto</DataTableHeaderCell>
-              <DataTableHeaderCell>SKU</DataTableHeaderCell>
-              <DataTableHeaderCell>Stock</DataTableHeaderCell>
-              <DataTableHeaderCell>Azioni</DataTableHeaderCell>
-            </DataTableHead>
-            <DataTableBody>
-              {variants.map((v) => (
-                <DataTableRow key={v.id}>
-                  <DataTableCell>
-                    <Link href={`/admin/prodotti/${v.productId}`} className="hover:underline">
-                      {v.product.name} — {v.name}
-                    </Link>
-                  </DataTableCell>
-                  <DataTableCell>{v.sku}</DataTableCell>
-                  <DataTableCell>
-                    <StatusBadge
-                      label={String(v.stock)}
-                      variant={v.stock === 0 ? "danger" : "warning"}
-                    />
-                  </DataTableCell>
-                  <DataTableCell>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => adjustStock(v.productId, v.id, 1)}>+1</Button>
-                      <Button size="sm" variant="outline" onClick={() => adjustStock(v.productId, v.id, 10)}>+10</Button>
-                    </div>
-                  </DataTableCell>
-                </DataTableRow>
-              ))}
-            </DataTableBody>
-          </table>
-        </DataTable>
+        <div className="overflow-x-auto">
+          <DataTable>
+            <table className="w-full min-w-[500px]">
+              <DataTableHead>
+                <DataTableHeaderCell>{it("product")}</DataTableHeaderCell>
+                <DataTableHeaderCell>{it("sku")}</DataTableHeaderCell>
+                <DataTableHeaderCell>{it("stock")}</DataTableHeaderCell>
+                <DataTableHeaderCell>{it("actions")}</DataTableHeaderCell>
+              </DataTableHead>
+              <DataTableBody>
+                {variants.map((v) => (
+                  <DataTableRow key={v.id}>
+                    <DataTableCell>
+                      <Link href={`/admin/products/${v.productId}`} className="hover:underline">
+                        {v.product.name} — {v.name}
+                      </Link>
+                    </DataTableCell>
+                    <DataTableCell>{v.sku}</DataTableCell>
+                    <DataTableCell>
+                      <StatusBadge
+                        label={String(v.stock)}
+                        variant={v.stock === 0 ? "danger" : "warning"}
+                      />
+                    </DataTableCell>
+                    <DataTableCell>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => adjustStock(v.productId, v.id, 1)}>+1</Button>
+                        <Button size="sm" variant="outline" onClick={() => adjustStock(v.productId, v.id, 10)}>+10</Button>
+                      </div>
+                    </DataTableCell>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </table>
+          </DataTable>
+        </div>
       )}
     </div>
   );

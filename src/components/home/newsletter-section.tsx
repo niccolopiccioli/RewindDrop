@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Button from "@/components/ui/button";
 import ScrollReveal from "@/components/home/scroll-reveal";
+import { useI18n } from "@/components/layout/locale-provider";
 
 export default function NewsletterSection() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
 
@@ -36,14 +38,13 @@ export default function NewsletterSection() {
 
             <div className="relative max-w-xl mx-auto text-center">
               <p className="text-[10px] uppercase tracking-[0.35em] text-background/45 mb-4">
-                Inner circle
+                {t("newsletter.eyebrow")}
               </p>
               <h2 className="text-display text-2xl sm:text-3xl md:text-4xl font-semibold mb-4">
-                Entra nel drop
+                {t("newsletter.title")}
               </h2>
               <p className="text-sm sm:text-base text-background/55 mb-8 leading-relaxed">
-                Accesso anticipato ai nuovi arrivi, restock e offerte riservate.
-                Niente spam, solo heat.
+                {t("newsletter.subtitle")}
               </p>
 
               <form
@@ -52,7 +53,7 @@ export default function NewsletterSection() {
               >
                 <input
                   type="email"
-                  placeholder="La tua email"
+                  placeholder={t("newsletter.placeholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -64,18 +65,18 @@ export default function NewsletterSection() {
                   shape="pill"
                   className="shrink-0"
                 >
-                  Iscriviti
+                  {t("newsletter.subscribe")}
                 </Button>
               </form>
 
               {status === "ok" && (
                 <p className="text-xs text-emerald-300 mt-4 animate-fade-in">
-                  Sei dentro. Benvenuto nel drop.
+                  {t("newsletter.success")}
                 </p>
               )}
               {status === "error" && (
                 <p className="text-xs text-red-300 mt-4 animate-fade-in">
-                  Email non valida. Riprova.
+                  {t("newsletter.error")}
                 </p>
               )}
             </div>

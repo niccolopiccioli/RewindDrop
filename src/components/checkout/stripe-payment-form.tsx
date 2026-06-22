@@ -9,8 +9,9 @@ import {
 } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe-client";
 import type { OnlinePaymentMethodId } from "@/lib/payments/methods";
-import { ONLINE_PAYMENT_METHODS } from "@/lib/payments/methods";
+import { localizePaymentMethod } from "@/lib/payments/labels";
 import Button from "@/components/ui/button";
+import { useI18n } from "@/components/layout/locale-provider";
 
 type StripePaymentFormProps = {
   clientSecret: string;
@@ -32,9 +33,10 @@ function PaymentForm({
 }: Omit<StripePaymentFormProps, "clientSecret">) {
   const stripe = useStripe();
   const elements = useElements();
+  const { t, locale } = useI18n();
   const [loading, setLoading] = useState(false);
 
-  const methodLabel = ONLINE_PAYMENT_METHODS[paymentMethod].label;
+  const methodLabel = localizePaymentMethod(locale, paymentMethod).label;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +53,7 @@ function PaymentForm({
       });
 
       if (error) {
-        onError(error.message ?? "Pagamento non riuscito");
+        onError(error.message ?? t("checkout.paymentFailed"));
         return;
       }
 
@@ -66,13 +68,13 @@ function PaymentForm({
         });
         const data = await res.json();
         if (!res.ok) {
-          onError(data.error ?? "Errore conferma ordine");
+          onError(data.error ?? t("checkout.orderConfirmFailed"));
           return;
         }
         onSuccess(data.orderNumber);
       }
     } catch {
-      onError("Errore durante il pagamento");
+      onError(t("checkout.paymentError"));
     } finally {
       setLoading(false);
     }
@@ -92,16 +94,15 @@ function PaymentForm({
         />
       </div>
       <p className="text-xs text-muted">
-        Pagamento sicuro con {methodLabel} tramite Stripe.
-        {paymentMethod === "card" &&
-          " In test usa la carta 4242 4242 4242 4242."}
+        {t("checkout.securePayment", { method: methodLabel })}
+        {paymentMethod === "card" && t("checkout.stripeTestHint")}
       </p>
       <div className="flex gap-3">
         <Button type="button" variant="outline" onClick={onBack} className="flex-1">
-          Indietro
+          {t("checkout.back")}
         </Button>
         <Button type="submit" loading={loading} shape="pill" size="lg" className="flex-1">
-          Paga €{amount.toFixed(2)}
+          {t("checkout.payAmount", { amount: amount.toFixed(2) })}
         </Button>
       </div>
     </form>

@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "La tua destinazione per streetwear di tendenza e accessori unici. Qualità, stile e originalità in ogni pezzo.",
-  keywords: ["streetwear", "moda", "accessori", "RewindDrop", "online", "shop"],
+    "Your destination for trending streetwear and unique accessories. Quality, style and originality in every piece.",
+  keywords: ["streetwear", "fashion", "accessories", "RewindDrop", "online", "shop"],
   openGraph: {
     type: "website",
     locale: "it_IT",
@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="it"
+      lang="en"
       className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}
     >
       <body

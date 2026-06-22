@@ -43,7 +43,7 @@ function categoryBanner(
   return {
     title: row?.name ?? defaults.title,
     subtitle: row?.bannerSubtitle ?? defaults.subtitle,
-    href: `/prodotti?category=${slug}`,
+    href: `/products?category=${slug}`,
     image: resolveBannerImage(row?.image, defaults.image),
     imageAlt: row ? (row.imageAlt ?? defaults.imageAlt) : defaults.imageAlt,
     objectFit: normalizeImageFit(row?.objectFit),

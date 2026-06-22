@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "@/components/ui/button";
+import { useAdminT } from "./admin-locale-provider";
 
 type UnsavedChangesDialogProps = {
   open: boolean;
@@ -13,6 +14,9 @@ export default function UnsavedChangesDialog({
   onStay,
   onLeave,
 }: UnsavedChangesDialogProps) {
+  const t = useAdminT();
+  const ct = (k: string) => t(`admin.common.${k}`);
+
   if (!open) return null;
 
   return (
@@ -20,7 +24,7 @@ export default function UnsavedChangesDialog({
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
-        aria-label="Chiudi"
+        aria-label={ct("close")}
         onClick={onStay}
       />
       <div
@@ -33,17 +37,17 @@ export default function UnsavedChangesDialog({
           id="unsaved-changes-title"
           className="text-lg font-semibold text-foreground"
         >
-          Modifiche non salvate
+          {ct("unsavedTitle")}
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Hai modifiche non salvate. Se esci ora, le modifiche andranno perse.
+          {ct("unsavedMessage")}
         </p>
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <Button type="button" variant="outline" onClick={onStay}>
-            Resta sulla pagina
+            {ct("unsavedStay")}
           </Button>
           <Button type="button" onClick={onLeave}>
-            Esci senza salvare
+            {ct("unsavedLeave")}
           </Button>
         </div>
       </div>

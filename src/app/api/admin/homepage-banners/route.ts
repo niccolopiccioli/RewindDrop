@@ -84,7 +84,7 @@ export async function GET() {
           image: resolveBannerImage(row?.image, defaults.image),
           imageAlt: row ? (row.imageAlt ?? defaults.imageAlt) : defaults.imageAlt,
           objectFit: row?.objectFit ?? "cover",
-          href: `/prodotti?category=${slug}`,
+          href: `/products?category=${slug}`,
           wide: !!defaults.wide,
         };
       }),

@@ -7,6 +7,7 @@ import Input from "@/components/ui/input";
 import ImageFitSelect from "@/components/ui/image-fit-select";
 import type { ImageFit } from "@/lib/image-fit";
 import { normalizeImageUrl } from "@/lib/image-url";
+import { useAdminT } from "./admin-locale-provider";
 
 export type AdminImageValues = {
   image: string;
@@ -27,6 +28,8 @@ export default function AdminImageField({
   altPlaceholder,
   hidePreview = false,
 }: AdminImageFieldProps) {
+  const t = useAdminT();
+  const ht = (k: string) => t(`admin.homepage.${k}`);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,7 +54,7 @@ export default function AdminImageField({
         imageAlt: values.imageAlt || altPlaceholder || "",
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload fallito");
+      setError(err instanceof Error ? err.message : t("admin.common.error"));
     } finally {
       setUploading(false);
     }
@@ -62,7 +65,7 @@ export default function AdminImageField({
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Input
-        label="URL immagine"
+        label={ht("image")}
         value={values.image}
         onChange={(e) => {
           const image = normalizeImageUrl(e.target.value);
@@ -94,7 +97,7 @@ export default function AdminImageField({
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
           <Upload size={16} />
-          <span>Carica file</span>
+          <span>{t("admin.products.addImage")}</span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -106,7 +109,7 @@ export default function AdminImageField({
           />
         </label>
         {uploading && (
-          <span className="text-sm text-gray-500">Caricamento...</span>
+          <span className="text-sm text-gray-500">{t("admin.common.loading")}</span>
         )}
         {values.image && (
           <button
@@ -115,7 +118,7 @@ export default function AdminImageField({
             className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-red-500"
           >
             <X size={14} />
-            Rimuovi immagine
+            {t("admin.products.remove")}
           </button>
         )}
         {!hidePreview && (

@@ -1,5 +1,8 @@
+"use client";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@/components/ui/button";
+import { useAdminT } from "./admin-locale-provider";
 
 interface AdminPaginationProps {
   page: number;
@@ -8,7 +11,6 @@ interface AdminPaginationProps {
   limit: number;
   onPageChange: (page: number) => void;
   itemLabel?: string;
-  /** Nasconde i controlli pagina (es. "mostra tutti") */
   hidePages?: boolean;
 }
 
@@ -40,9 +42,12 @@ export default function AdminPagination({
   total,
   limit,
   onPageChange,
-  itemLabel = "prodotti",
+  itemLabel,
   hidePages = false,
 }: AdminPaginationProps) {
+  const t = useAdminT();
+  const ct = (k: string) => t(`admin.common.${k}`);
+
   if (total === 0) return null;
 
   const from = (page - 1) * limit + 1;
@@ -55,11 +60,11 @@ export default function AdminPagination({
         <span className="font-medium text-foreground">
           {from}–{to}
         </span>{" "}
-        di {total} {itemLabel}
+        {ct("of")} {total} {itemLabel}
       </p>
 
       {totalPages > 1 && !hidePages && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1">
           <Button
             type="button"
             variant="outline"

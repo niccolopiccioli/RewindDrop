@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import MediaImage from "@/components/ui/media-image";
 import { Search, X } from "lucide-react";
+import { usePaths } from "@/hooks/use-paths";
+import { useI18n } from "@/components/layout/locale-provider";
 
 type Product = {
   slug: string;
@@ -17,6 +19,8 @@ type SearchDialogProps = {
 };
 
 export default function SearchDialog({ buttonClassName = "" }: SearchDialogProps) {
+  const paths = usePaths();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
@@ -35,12 +39,12 @@ export default function SearchDialog({ buttonClassName = "" }: SearchDialogProps
       setResults([]);
       return;
     }
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       const res = await fetch(`/api/products?search=${encodeURIComponent(query)}&limit=6`);
       const data = await res.json();
       setResults(data.products ?? []);
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [query]);
 
   return (
@@ -48,7 +52,7 @@ export default function SearchDialog({ buttonClassName = "" }: SearchDialogProps
       <button
         onClick={() => setOpen(true)}
         className={`p-2 rounded-full transition-colors ${buttonClassName || "text-muted hover:text-foreground"}`}
-        aria-label="Cerca"
+        aria-label={t("nav.search")}
       >
         <Search size={18} strokeWidth={1.5} />
       </button>
@@ -65,10 +69,10 @@ export default function SearchDialog({ buttonClassName = "" }: SearchDialogProps
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cerca prodotti..."
+                placeholder={t("search.placeholder")}
                 className="flex-1 text-sm outline-none"
               />
-              <button onClick={() => setOpen(false)} aria-label="Chiudi">
+              <button onClick={() => setOpen(false)} aria-label={t("common.close")}>
                 <X size={18} />
               </button>
             </div>
@@ -76,7 +80,7 @@ export default function SearchDialog({ buttonClassName = "" }: SearchDialogProps
               {results.map((p) => (
                 <Link
                   key={p.slug}
-                  href={`/prodotti/${p.slug}`}
+                  href={paths.product(p.slug)}
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 p-3 hover:bg-surface transition-colors"
                 >
@@ -97,15 +101,15 @@ export default function SearchDialog({ buttonClassName = "" }: SearchDialogProps
                 </Link>
               ))}
               {query && results.length === 0 && (
-                <p className="p-4 text-sm text-muted">Nessun risultato</p>
+                <p className="p-4 text-sm text-muted">{t("search.noResults")}</p>
               )}
               {query && results.length > 0 && (
                 <Link
-                  href={`/prodotti?q=${encodeURIComponent(query)}`}
+                  href={paths.productsSearch(query)}
                   onClick={() => setOpen(false)}
                   className="block p-4 text-xs uppercase tracking-widest text-center border-t border-border hover:bg-surface"
                 >
-                  Vedi tutti i risultati
+                  {t("search.viewAllResults")}
                 </Link>
               )}
             </div>
