@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/migrate-deploy.mjs && next build",
+    "build": "next build",
+    "db:migrate:deploy": "node scripts/migrate-deploy.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
