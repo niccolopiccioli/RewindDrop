@@ -84,7 +84,7 @@ public/uploads/    # Upload prodotti (locale)
 Repo: https://github.com/niccolopiccioli/eshop-streetwear
 
 ### 2. Vercel
-Progetto: **eshop-streetwear** (collegato al repo GitHub)
+Progetto: **eshop-streetwear** — produzione: https://rewinddrop.vercel.app
 
 Dopo aver collegato Supabase dalla dashboard Vercel, imposta queste variabili d'ambiente:
 
@@ -94,7 +94,7 @@ Dopo aver collegato Supabase dalla dashboard Vercel, imposta queste variabili d'
 | `AUTH_SECRET` | `openssl rand -base64 32` |
 | `AUTH_TRUST_HOST` | `true` |
 | `PAYMENT_MODE` | `mock` |
-| `NEXT_PUBLIC_APP_URL` | URL produzione Vercel |
+| `NEXT_PUBLIC_APP_URL` | `https://rewinddrop.vercel.app` |
 
 Poi dalla **Shell Vercel** o in locale con `DATABASE_URL` di produzione:
 ```bash
