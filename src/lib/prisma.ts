@@ -7,12 +7,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function getDatabaseUrl() {
-  // Vercel + Supabase integration provides POSTGRES_* vars
-  return (
-    process.env.POSTGRES_PRISMA_URL ??
-    process.env.POSTGRES_URL ??
-    process.env.DATABASE_URL
-  );
+  const candidates = [
+    process.env.POSTGRES_PRISMA_URL,
+    process.env.POSTGRES_URL,
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL_NON_POOLING,
+  ];
+
+  return candidates.find((value) => value && value.trim().length > 0);
 }
 
 function getDatabaseHost(connectionString: string) {
