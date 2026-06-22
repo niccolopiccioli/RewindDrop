@@ -33,14 +33,32 @@ function needsSupabaseSsl(connectionString: string) {
   return /supabase\.(com|co)|pooler\.supabase\.com/i.test(connectionString);
 }
 
-function getPgPoolConfig(connectionString: string): PoolConfig {
-  const config: PoolConfig = { connectionString };
-
-  if (needsSupabaseSsl(connectionString)) {
-    config.ssl = { rejectUnauthorized: false };
+function normalizeConnectionString(connectionString: string) {
+  if (!needsSupabaseSsl(connectionString)) {
+    return connectionString;
   }
 
-  return config;
+  let normalized = connectionString
+    .replace(/([?&])sslmode=[^&]*/gi, "$1")
+    .replace(/([?&])sslcert=[^&]*/gi, "$1")
+    .replace(/([?&])sslrootcert=[^&]*/gi, "$1")
+    .replace(/\?&/, "?")
+    .replace(/&&+/g, "&")
+    .replace(/[?&]$/, "");
+
+  const separator = normalized.includes("?") ? "&" : "?";
+  return `${normalized}${separator}sslmode=no-verify`;
+}
+
+function getPgPoolConfig(connectionString: string): PoolConfig {
+  const normalizedConnectionString = normalizeConnectionString(connectionString);
+
+  return {
+    connectionString: normalizedConnectionString,
+    ssl: needsSupabaseSsl(connectionString)
+      ? { rejectUnauthorized: false }
+      : undefined,
+  };
 }
 
 function createPrismaClient() {
@@ -50,12 +68,13 @@ function createPrismaClient() {
   }
 
   const poolConfig = getPgPoolConfig(connectionString);
+  const normalizedConnectionString = poolConfig.connectionString as string;
 
   // #region agent log
   console.error(
     JSON.stringify({
       sessionId: "090a4e",
-      hypothesisId: "C",
+      hypothesisId: "C2",
       location: "src/lib/prisma.ts:createPrismaClient",
       message: "Prisma pool config",
       data: {
@@ -66,6 +85,9 @@ function createPrismaClient() {
             : "DATABASE_URL",
         host: getDatabaseHost(connectionString),
         sslEnabled: Boolean(poolConfig.ssl),
+        sslMode: normalizedConnectionString.includes("sslmode=no-verify")
+          ? "no-verify"
+          : "default",
       },
       timestamp: Date.now(),
     })
