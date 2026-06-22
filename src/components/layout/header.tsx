@@ -99,7 +99,9 @@ export default function Header() {
           </div>
 
           <nav
-            className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2"
+            className={`hidden lg:flex items-center gap-6 xl:gap-8 absolute -translate-x-1/2 ${
+              isOverlay ? "left-[30%] xl:left-[28%]" : "left-1/2"
+            }`}
             aria-label="Navigazione principale"
           >
             {navigation.map((item) => (
@@ -107,6 +109,8 @@ export default function Header() {
                 key={item.name}
                 href={item.href}
                 className={`group relative py-1 text-[10px] font-medium uppercase tracking-[0.2em] transition-colors duration-300 ${navLinkClass} ${
+                  isOverlay ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]" : ""
+                } ${
                   item.accent && !isOverlay ? "text-foreground" : ""
                 } ${item.accent && isOverlay ? "text-white" : ""}`}
               >
