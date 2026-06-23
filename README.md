@@ -1,65 +1,65 @@
-# RewindDrop — E-commerce Streetwear
+# RewindDrop — Streetwear E-Commerce
 
-Sito dimostrativo full-stack per streetwear e accessori. Storefront animata, checkout, area cliente, pannello admin e catalogo multi-colore con integrazione immagini StockX/Unsplash.
+Full-stack demo storefront for streetwear and accessories. Animated product showcase, checkout flow, customer area, admin panel, and multi-color catalog with StockX/Unsplash image integration.
 
-**Produzione:** [https://rewinddrop.vercel.app](https://rewinddrop.vercel.app)  
+**Production:** [https://rewinddrop.vercel.app](https://rewinddrop.vercel.app)  
 **Repository:** [github.com/niccolopiccioli/eshop-streetwear](https://github.com/niccolopiccioli/eshop-streetwear)
 
-> Progetto portfolio/demo: nessuna vendita reale. Vedi disclaimer in footer e `/privacy`.
+> Portfolio/demo project — no real transactions. See disclaimer in footer and `/privacy`.
 
 ---
 
-## Indice
+## Table of Contents
 
-1. [Stack tecnologico](#stack-tecnologico)
-2. [Architettura](#architettura)
-3. [Funzionalità](#funzionalità)
-4. [Setup locale](#setup-locale)
-5. [Variabili d'ambiente](#variabili-dambiente)
+1. [Tech Stack](#tech-stack)
+2. [Architecture](#architecture)
+3. [Features](#features)
+4. [Local Setup](#local-setup)
+5. [Environment Variables](#environment-variables)
 6. [Database (Prisma)](#database-prisma)
-7. [API REST](#api-rest)
-8. [Autenticazione](#autenticazione)
-9. [Pagamenti](#pagamenti)
-10. [Upload immagini](#upload-immagini)
-11. [Script CLI](#script-cli)
+7. [REST API](#rest-api)
+8. [Authentication](#authentication)
+9. [Payments](#payments)
+10. [Image Upload](#image-upload)
+11. [CLI Scripts](#cli-scripts)
 12. [Deploy (Vercel + Supabase)](#deploy-vercel--supabase)
-13. [Testing e qualità](#testing-e-qualità)
-14. [Struttura del progetto](#struttura-del-progetto)
+13. [Testing & Quality](#testing--quality)
+14. [Project Structure](#project-structure)
 
 ---
 
-## Stack tecnologico
+## Tech Stack
 
-| Layer | Tecnologia | Versione |
-|-------|------------|----------|
+| Layer | Technology | Version |
+|-------|------------|---------|
 | Framework | [Next.js](https://nextjs.org) (App Router) | 16.2.x |
-| Runtime UI | [React](https://react.dev) | 19.2.x |
-| Linguaggio | [TypeScript](https://www.typescriptlang.org) | 5.x |
+| UI Runtime | [React](https://react.dev) | 19.2.x |
+| Language | [TypeScript](https://www.typescriptlang.org) | 5.x |
 | Styling | [Tailwind CSS](https://tailwindcss.com) | 4.x |
-| ORM | [Prisma](https://www.prisma.io) + driver adapter `pg` | 7.8.x |
+| ORM | [Prisma](https://www.prisma.io) + `pg` driver adapter | 7.8.x |
 | Database | PostgreSQL 16 | — |
 | Auth | [NextAuth.js](https://authjs.dev) v5 (JWT) | beta |
-| State client | [Zustand](https://zustand.docs.pmnd.rs) | 5.x |
-| Form / validazione | React Hook Form + [Zod](https://zod.dev) | 4.x |
-| Pagamenti | Stripe (opzionale) + mock locale | 22.x |
+| Client State | [Zustand](https://zustand.docs.pmnd.rs) | 5.x |
+| Forms / Validation | React Hook Form + [Zod](https://zod.dev) | 4.x |
+| Payments | Stripe (optional) + local mock | 22.x |
 | Email | Nodemailer (SMTP / MailHog) | 7.x |
-| Storage file | Filesystem locale / [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) | — |
-| Test | [Vitest](https://vitest.dev) | 3.x |
+| File Storage | Local filesystem / [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) | — |
+| Tests | [Vitest](https://vitest.dev) | 3.x |
 | Deploy | Vercel | — |
-| DB cloud | Supabase (PostgreSQL) | — |
+| DB Cloud | Supabase (PostgreSQL) | — |
 
-**Font:** Space Grotesk (display) + Inter (body), caricati via `next/font` con subset limitati.
+**Fonts:** Space Grotesk (display) + Inter (body), loaded via `next/font` with limited subsets.
 
-**Immagini remote:** Unsplash, StockX CDN — ottimizzate in AVIF/WebP tramite `next/image` e helper `optimizeImageUrl()`.
+**Remote Images:** Unsplash, StockX CDN — optimized to AVIF/WebP via `next/image` and `optimizeImageUrl()`.
 
 ---
 
-## Architettura
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Client (browser)                      │
-│  React 19 · Zustand (carrello) · dynamic import sezioni home │
+│  React 19 · Zustand (cart) · dynamic import home sections    │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -68,7 +68,7 @@ Sito dimostrativo full-stack per streetwear e accessori. Storefront animata, che
 │  │ (store)/    │  │ admin/       │  │ api/ (Route Handlers)│ │
 │  │ SSR + ISR   │  │ Server Comp. │  │ REST JSON            │ │
 │  └─────────────┘  └──────────────┘  └─────────────────────┘ │
-│  middleware.ts → NextAuth (JWT) + guard admin/account          │
+│  middleware.ts → NextAuth (JWT) + admin/account guard          │
 └──────────────────────────┬──────────────────────────────────┘
                            │ Prisma Client 7 (@prisma/adapter-pg)
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -76,76 +76,74 @@ Sito dimostrativo full-stack per streetwear e accessori. Storefront animata, che
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Pattern principali
+### Key patterns
 
-- **Server Components** per pagine catalogo, homepage, admin (fetch dati lato server).
-- **Client Components** per carrello, checkout, form admin interattivi, animazioni scroll.
-- **ISR** sulla homepage (`revalidate = 120`).
-- **Dynamic import** per marquee prodotti e newsletter (riduce JS iniziale).
-- **Query condivise** in `src/lib/*-query.ts` (prodotti, categorie, banner).
-- **Validazione** centralizzata in `src/lib/validations/` (Zod).
-- **Serializzazione** Prisma → JSON in `src/lib/serialize.ts` (Decimal → number).
+- **Server Components** for catalog pages, homepage, admin (server-side data fetching).
+- **Client Components** for cart, checkout, interactive admin forms, scroll animations.
+- **ISR** on homepage (`revalidate = 120`).
+- **Dynamic import** for product marquee and newsletter (reduces initial JS).
+- **Shared queries** in `src/lib/*-query.ts` (products, categories, banners).
+- **Centralized validation** in `src/lib/validations/` (Zod).
+- **Prisma serialization** in `src/lib/serialize.ts` (Decimal → number).
 
 ---
 
-## Funzionalità
+## Features
 
 ### Storefront (`src/app/(store)/`)
 
-| Area | Dettaglio |
-|------|-----------|
-| Homepage | Hero animato, ticker, featured drop, category rail, marquee prodotti, mosaic editoriale, manifesto, newsletter |
-| Catalogo | Filtri per categoria, genere, taglia, sale, ordinamento, ricerca |
-| Scheda prodotto | Galleria multi-colore, varianti taglia/colore, recensioni, wishlist |
-| Carrello | Persistenza guest (sessionId) + utente loggato, sync disponibilità |
-| Checkout | Indirizzo spedizione, metodi pagamento mock/Stripe, conferma ordine |
-| Account | Profilo, indirizzi, ordini, wishlist |
-| Pagine statiche | Spedizioni, resi, privacy (con sezione demo) |
+| Area | Details |
+|------|---------|
+| Homepage | Animated hero, ticker, featured drop, category rail, product marquee, editorial mosaic, manifesto, newsletter |
+| Catalog | Filters by category, gender, size, sale; sorting, search |
+| Product detail | Multi-color gallery, size/color variants, reviews, wishlist |
+| Cart | Guest persistence (sessionId) + logged-in user, stock sync |
+| Checkout | Shipping address, mock/Stripe payment methods, order confirmation |
+| Account | Profile, addresses, orders, wishlist |
+| Static pages | Shipping, returns, privacy (with demo section) |
 
 ### Admin (`src/app/admin/`)
 
-| Area | Dettaglio |
-|------|-----------|
-| Dashboard | KPI vendite, grafici revenue, top prodotti, performance categorie |
-| Prodotti | CRUD, varianti, immagini multi-colore, duplicazione, bulk delete/visibility, check SKU |
-| Categorie | CRUD con immagine, alt text, object-fit, sottotitolo banner |
-| Homepage | Editor banner categorie + spot editoriali (`HomeSpot`) |
-| Ordini | Lista, dettaglio, aggiornamento stato |
-| Inventario | Soglia stock basso configurabile |
-| Recensioni | Moderazione approve/reject |
+| Area | Details |
+|------|---------|
+| Dashboard | Sales KPIs, revenue charts, top products, category performance |
+| Products | CRUD, variants, multi-color images, duplication, bulk delete/visibility, SKU check |
+| Categories | CRUD with image, alt text, object-fit, banner subtitle |
+| Homepage | Category banner + editorial spot editor |
+| Orders | List, detail, status updates |
+| Inventory | Configurable low-stock threshold |
+| Reviews | Approve/reject moderation |
 
-### Catalogo demo
+### Demo catalog
 
-Il seed popola:
+The seed populates:
 
-- **7 categorie:** t-shirts, felpe, pantaloni, cappelli, borse, giacche, sneakers
-- **~30 prodotti mock** (Unsplash) + **21 sneakers StockX** (immagini CDN multi-angolo)
-- Utenti demo admin e cliente
-- Banner homepage e spot editoriali preconfigurati
+- **7 categories:** t-shirts, hoodies, pants, hats, bags, jackets, sneakers
+- **~30 mock products** (Unsplash) + **21 StockX sneakers** (multi-angle CDN images)
+- Demo admin and customer users
+- Preconfigured homepage banners and editorial spots
 
 ---
 
-## Setup locale
+## Local Setup
 
-### Requisiti
+### Requirements
 
-- **Node.js** 20+ (consigliato 24.x, come su Vercel)
+- **Node.js** 20+ (24.x recommended, matching Vercel)
 - **Docker** (Postgres + MailHog)
 - **npm**
 
-### Avvio rapido
+### Quick start
 
 ```bash
-# 1. Servizi locali (Postgres + MailHog)
+# 1. Local services (Postgres + MailHog)
 docker compose up -d
 
-# 2. Variabili d'ambiente
+# 2. Environment variables
 cp .env.example .env
-# Imposta AUTH_SECRET: openssl rand -base64 32
-# DATABASE_URL locale (se non già in .env):
-# DATABASE_URL="postgresql://eshop:eshop@localhost:5432/eshop?schema=public"
+# Set AUTH_SECRET: openssl rand -base64 32
 
-# 3. Dipendenze + DB + seed
+# 3. Dependencies + DB + seed
 npm install
 npm run setup
 
@@ -153,19 +151,19 @@ npm run setup
 npm run dev
 ```
 
-Apri [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
-### Credenziali demo
+### Demo credentials
 
-| Ruolo | Email | Password |
-|-------|-------|----------|
+| Role | Email | Password |
+|------|-------|----------|
 | Admin | `admin@eshop.local` | `admin123` |
-| Cliente | `cliente@eshop.local` | `cliente123` |
+| Customer | `cliente@eshop.local` | `cliente123` |
 
-### Servizi locali
+### Local services
 
-| Servizio | URL / comando |
-|----------|----------------|
+| Service | URL / command |
+|---------|---------------|
 | App | http://localhost:3000 |
 | Prisma Studio | `npm run db:studio` |
 | MailHog UI | http://localhost:8025 |
@@ -173,54 +171,54 @@ Apri [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Variabili d'ambiente
+## Environment Variables
 
-| Variabile | Obbligatoria | Descrizione |
-|-----------|:------------:|-------------|
-| `DATABASE_URL` | ✅ | Connection string PostgreSQL. In produzione preferire `POSTGRES_PRISMA_URL` da integrazione Vercel+Supabase |
-| `POSTGRES_PRISMA_URL` | ⚙️ | URL pooler Supabase (porta 6543). Usata da `prisma.config.ts` con priorità |
-| `POSTGRES_URL_NON_POOLING` | ⚙️ | URL diretto (porta 5432) per `npm run db:migrate:deploy` |
-| `AUTH_SECRET` | ✅ | Secret NextAuth (`openssl rand -base64 32`) |
-| `AUTH_TRUST_HOST` | ✅ prod | `true` su Vercel per trust proxy |
-| `NEXT_PUBLIC_APP_URL` | ✅ prod | URL pubblico, es. `https://rewinddrop.vercel.app` |
-| `PAYMENT_MODE` | — | `mock` (default) o `stripe` |
-| `STRIPE_SECRET_KEY` | Stripe | Chiave segreta Stripe |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe | Chiave pubblica Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Stripe | Secret webhook `/api/webhooks/stripe` |
-| `BLOB_READ_WRITE_TOKEN` | prod upload | Token Vercel Blob; senza, upload su `public/uploads/` |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_FROM` | — | Email transazionali; default log in console |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | — | OAuth Google (opzionale) |
-| `LOW_STOCK_THRESHOLD` | — | Soglia inventario basso admin (default 5) |
+| Variable | Required | Description |
+|----------|:--------:|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string. In production prefer `POSTGRES_PRISMA_URL` from Vercel+Supabase integration |
+| `POSTGRES_PRISMA_URL` | ⚙️ | Supabase pooler URL (port 6543). Used by `prisma.config.ts` with priority |
+| `POSTGRES_URL_NON_POOLING` | ⚙️ | Direct URL (port 5432) for `npm run db:migrate:deploy` |
+| `AUTH_SECRET` | ✅ | NextAuth secret (`openssl rand -base64 32`) |
+| `AUTH_TRUST_HOST` | ✅ prod | `true` on Vercel for proxy trust |
+| `NEXT_PUBLIC_APP_URL` | ✅ prod | Public URL, e.g. `https://rewinddrop.vercel.app` |
+| `PAYMENT_MODE` | — | `mock` (default) or `stripe` |
+| `STRIPE_SECRET_KEY` | Stripe | Stripe secret key |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe | Stripe publishable key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe | Webhook secret for `/api/webhooks/stripe` |
+| `BLOB_READ_WRITE_TOKEN` | prod upload | Vercel Blob token; without it, uploads go to `public/uploads/` |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_FROM` | — | Transactional emails; defaults to console log |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | — | Google OAuth (optional) |
+| `LOW_STOCK_THRESHOLD` | — | Admin low-stock threshold (default 5) |
 
-> **Nota:** nel `.env` locale, lasciare vuote le variabili `POSTGRES_*` se non usate — stringhe vuote `""` vengono ignorate da `getDatabaseUrl()` in favore di `DATABASE_URL`.
+> **Note:** In local `.env`, leave `POSTGRES_*` variables empty — empty strings `""` are ignored by `getDatabaseUrl()` in favor of `DATABASE_URL`.
 
 ---
 
 ## Database (Prisma)
 
-### Configurazione
+### Configuration
 
 - **Schema:** `prisma/schema.prisma`
-- **Config:** `prisma.config.ts` (Prisma 7 — URL da env, non più nel schema)
-- **Client generato:** `src/generated/prisma/` (gitignored, rigenerato in `postinstall`)
-- **Driver:** `@prisma/adapter-pg` con pool SSL custom per Supabase (`sslmode=no-verify`)
+- **Config:** `prisma.config.ts` (Prisma 7 — URL from env, no longer in schema)
+- **Generated Client:** `src/generated/prisma/` (gitignored, regenerated in `postinstall`)
+- **Driver:** `@prisma/adapter-pg` with custom SSL pool for Supabase (`sslmode=no-verify`)
 
-### Modelli principali
+### Core models
 
-| Modello | Scopo |
-|---------|-------|
-| `User`, `Account`, `Session` | Auth NextAuth + ruoli `CUSTOMER` / `ADMIN` |
-| `Category` | Categorie gerarchiche con banner homepage |
-| `Product`, `Variant`, `Image` | Catalogo multi-variante e multi-immagine per colore |
-| `Cart`, `CartItem` | Carrello guest (`sessionId`) o utente |
-| `Order`, `OrderItem` | Ordini; `productId`/`variantId` nullable per storico post-delete |
-| `Address` | Indirizzi utente |
-| `Review` | Recensioni con moderazione |
-| `Wishlist` | Lista desideri |
-| `NewsletterSubscriber` | Iscrizioni newsletter |
-| `HomeSpot` | Spot editoriali homepage (lookbook, dettagli) |
+| Model | Purpose |
+|-------|---------|
+| `User`, `Account`, `Session` | NextAuth auth + `CUSTOMER` / `ADMIN` roles |
+| `Category` | Hierarchical categories with homepage banners |
+| `Product`, `Variant`, `Image` | Multi-variant, multi-color catalog |
+| `Cart`, `CartItem` | Guest (`sessionId`) or user cart |
+| `Order`, `OrderItem` | Orders; nullable `productId`/`variantId` for post-delete history |
+| `Address` | User addresses |
+| `Review` | Moderated reviews |
+| `Wishlist` | User wishlist |
+| `NewsletterSubscriber` | Newsletter subscriptions |
+| `HomeSpot` | Homepage editorial spots (lookbook, details) |
 
-### Migrazioni
+### Migrations
 
 ```
 prisma/migrations/
@@ -234,203 +232,203 @@ prisma/migrations/
 ```
 
 ```bash
-npm run db:migrate        # Sviluppo: crea + applica migration
-npm run db:migrate:deploy # Produzione: solo apply (usa URL diretto)
-npm run db:push           # Sync schema senza migration (dev rapido)
-npm run db:generate       # Rigenera Prisma Client
-npm run db:seed           # Popola catalogo demo
+npm run db:migrate        # Dev: create + apply migration
+npm run db:migrate:deploy # Production: apply only (uses direct URL)
+npm run db:push           # Sync schema without migration (fast dev)
+npm run db:generate       # Regenerate Prisma Client
+npm run db:seed           # Populate demo catalog
 ```
 
 ---
 
-## API REST
+## REST API
 
-Tutte le route sono in `src/app/api/` (Next.js Route Handlers).
+All routes in `src/app/api/` (Next.js Route Handlers).
 
-### Pubbliche
+### Public
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/products` | Lista prodotti (filtri, paginazione) |
-| `GET` | `/api/products/[slug]` | Dettaglio prodotto |
-| `GET` | `/api/products/[slug]/reviews` | Recensioni prodotto |
-| `GET` | `/api/categories` | Lista categorie |
-| `GET` | `/api/cart` | Carrello corrente |
-| `POST` | `/api/cart` | Aggiungi/aggiorna item |
-| `DELETE` | `/api/cart` | Svuota carrello |
-| `POST` | `/api/cart/validate` | Valida disponibilità stock |
-| `POST` | `/api/checkout` | Crea ordine |
-| `POST` | `/api/checkout/confirm` | Conferma pagamento |
-| `POST` | `/api/checkout/complete` | Completa ordine offline |
-| `POST` | `/api/checkout/simulate-card` | Simula carta (solo dev) |
-| `GET` | `/api/payment-mode` | Modalità pagamento attiva |
-| `GET` | `/api/orders/[number]` | Dettaglio ordine (guest con token) |
-| `POST` | `/api/newsletter` | Iscrizione newsletter |
-| `POST` | `/api/auth/register` | Registrazione utente |
+| `GET` | `/api/products` | Product list (filters, pagination) |
+| `GET` | `/api/products/[slug]` | Product detail |
+| `GET` | `/api/products/[slug]/reviews` | Product reviews |
+| `GET` | `/api/categories` | Category list |
+| `GET` | `/api/cart` | Current cart |
+| `POST` | `/api/cart` | Add / update item |
+| `DELETE` | `/api/cart` | Clear cart |
+| `POST` | `/api/cart/validate` | Validate stock availability |
+| `POST` | `/api/checkout` | Create order |
+| `POST` | `/api/checkout/confirm` | Confirm payment |
+| `POST` | `/api/checkout/complete` | Complete offline order |
+| `POST` | `/api/checkout/simulate-card` | Simulate card (dev only) |
+| `GET` | `/api/payment-mode` | Active payment mode |
+| `GET` | `/api/orders/[number]` | Order detail (guest with token) |
+| `POST` | `/api/newsletter` | Newsletter signup |
+| `POST` | `/api/auth/register` | User registration |
 | `*` | `/api/auth/[...nextauth]` | NextAuth handlers |
-| `POST` | `/api/webhooks/stripe` | Webhook Stripe |
+| `POST` | `/api/webhooks/stripe` | Stripe webhook |
 
-### Account (autenticato)
+### Account (authenticated)
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET/PATCH` | `/api/account/profile` | Profilo utente |
-| `GET/POST` | `/api/account/addresses` | Indirizzi |
-| `PATCH/DELETE` | `/api/account/addresses/[id]` | Singolo indirizzo |
-| `GET` | `/api/account/orders` | Storico ordini |
-| `GET` | `/api/account/orders/[id]` | Dettaglio ordine |
+| `GET/PATCH` | `/api/account/profile` | User profile |
+| `GET/POST` | `/api/account/addresses` | Addresses |
+| `PATCH/DELETE` | `/api/account/addresses/[id]` | Single address |
+| `GET` | `/api/account/orders` | Order history |
+| `GET` | `/api/account/orders/[id]` | Order detail |
 | `GET/POST/DELETE` | `/api/wishlist` | Wishlist |
 
-### Admin (ruolo `ADMIN`)
+### Admin (`ADMIN` role)
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET/POST` | `/api/admin/products` | Lista / crea prodotto |
-| `GET/PATCH/DELETE` | `/api/admin/products/[id]` | CRUD prodotto |
-| `POST` | `/api/admin/products/[id]/duplicate` | Duplica prodotto |
-| `POST` | `/api/admin/products/bulk-delete` | Elimina multipli |
-| `POST` | `/api/admin/products/bulk-visibility` | Mostra/nascondi multipli |
-| `GET` | `/api/admin/products/ids` | Lista ID (selezione bulk) |
-| `GET` | `/api/admin/products/check-sku` | Verifica univocità SKU |
-| `*` | `/api/admin/products/[id]/images/*` | Upload, delete, reorder immagini |
-| `PATCH` | `/api/admin/products/[id]/variants/[variantId]/stock` | Aggiorna stock |
-| `GET/POST` | `/api/admin/categories` | Categorie |
-| `PATCH/DELETE` | `/api/admin/categories/[id]` | Singola categoria |
-| `GET/PATCH` | `/api/admin/orders` | Ordini |
-| `PATCH` | `/api/admin/orders/[id]` | Aggiorna stato ordine |
-| `GET/PATCH` | `/api/admin/reviews` | Moderazione recensioni |
-| `GET` | `/api/admin/inventory` | Report inventario |
-| `GET/PATCH` | `/api/admin/homepage-banners` | Banner homepage |
-| `PATCH` | `/api/admin/homepage-banners/category/[slug]` | Banner categoria |
-| `PATCH` | `/api/admin/homepage-banners/spot/[key]` | Spot editoriale |
-| `POST` | `/api/admin/upload` | Upload file generico |
+| `GET/POST` | `/api/admin/products` | List / create product |
+| `GET/PATCH/DELETE` | `/api/admin/products/[id]` | Product CRUD |
+| `POST` | `/api/admin/products/[id]/duplicate` | Duplicate product |
+| `POST` | `/api/admin/products/bulk-delete` | Bulk delete |
+| `POST` | `/api/admin/products/bulk-visibility` | Bulk show/hide |
+| `GET` | `/api/admin/products/ids` | Product ID list (bulk selection) |
+| `GET` | `/api/admin/products/check-sku` | SKU uniqueness check |
+| `*` | `/api/admin/products/[id]/images/*` | Upload, delete, reorder images |
+| `PATCH` | `/api/admin/products/[id]/variants/[variantId]/stock` | Update stock |
+| `GET/POST` | `/api/admin/categories` | Categories |
+| `PATCH/DELETE` | `/api/admin/categories/[id]` | Single category |
+| `GET/PATCH` | `/api/admin/orders` | Orders |
+| `PATCH` | `/api/admin/orders/[id]` | Update order status |
+| `GET/PATCH` | `/api/admin/reviews` | Review moderation |
+| `GET` | `/api/admin/inventory` | Inventory report |
+| `GET/PATCH` | `/api/admin/homepage-banners` | Homepage banners |
+| `PATCH` | `/api/admin/homepage-banners/category/[slug]` | Category banner |
+| `PATCH` | `/api/admin/homepage-banners/spot/[key]` | Editorial spot |
+| `POST` | `/api/admin/upload` | Generic file upload |
 
 ---
 
-## Autenticazione
+## Authentication
 
-- **Provider:** Credentials (email/password bcrypt) + Google OAuth (opzionale)
-- **Sessione:** JWT (strategy `jwt` in NextAuth v5)
-- **Ruoli:** `CUSTOMER` | `ADMIN` — propagati in token e session
+- **Provider:** Credentials (email/password bcrypt) + Google OAuth (optional)
+- **Session:** JWT (strategy `jwt` in NextAuth v5)
+- **Roles:** `CUSTOMER` | `ADMIN` — propagated in token and session
 - **Middleware** (`src/middleware.ts`):
-  - `/account/*` e `/api/account/*` → login obbligatorio
-  - `/admin/*` e `/api/admin/*` → login + ruolo `ADMIN`
-- **Registrazione:** `POST /api/auth/register` con hash bcrypt
+  - `/account/*` and `/api/account/*` → login required
+  - `/admin/*` and `/api/admin/*` → login + `ADMIN` role
+- **Registration:** `POST /api/auth/register` with bcrypt hash
 
 ---
 
-## Pagamenti
+## Payments
 
-| Modalità | Env | Comportamento |
-|----------|-----|---------------|
-| **Mock** | `PAYMENT_MODE=mock` | Ordine confermato senza addebito reale |
-| **Stripe** | `PAYMENT_MODE=stripe` + chiavi API | PaymentIntent, webhook, metodi card/Klarna |
-| **Simulazione dev** | Nessuna chiave Stripe in dev | Form carta simulata in checkout |
+| Mode | Env | Behavior |
+|------|-----|----------|
+| **Mock** | `PAYMENT_MODE=mock` | Order confirmed without real charge |
+| **Stripe** | `PAYMENT_MODE=stripe` + API keys | PaymentIntent, webhook, card/Klarna methods |
+| **Dev simulation** | No Stripe keys in dev | Simulated card form in checkout |
 
-Metodi offline supportati: contrassegno, bonifico (vedi `src/lib/payments/methods.ts`).
+Offline methods supported: cash on delivery, bank transfer (see `src/lib/payments/methods.ts`).
 
-Webhook locale Stripe:
+Local Stripe webhook:
 ```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 ---
 
-## Upload immagini
+## Image Upload
 
-| Ambiente | Storage | Path / servizio |
-|----------|---------|-----------------|
-| Locale | Filesystem | `public/uploads/` |
-| Produzione | Vercel Blob | CDN pubblico via `BLOB_READ_WRITE_TOKEN` |
+| Environment | Storage | Path / Service |
+|-------------|---------|----------------|
+| Local | Filesystem | `public/uploads/` |
+| Production | Vercel Blob | Public CDN via `BLOB_READ_WRITE_TOKEN` |
 
-- Formati: JPEG, PNG, WebP — max **5 MB**
-- Admin: upload su prodotti, categorie, banner homepage
-- Catalogo demo: immagini Unsplash e StockX CDN (nessun upload richiesto)
+- Formats: JPEG, PNG, WebP — max **5 MB**
+- Admin: upload on products, categories, homepage banners
+- Demo catalog: Unsplash and StockX CDN images (no upload required)
 
 ---
 
-## Script CLI
+## CLI Scripts
 
-| Comando | Descrizione |
+| Command | Description |
 |---------|-------------|
-| `npm run dev` | Dev server Next.js (Turbopack) |
-| `npm run build` | Build produzione (`next build`) |
-| `npm run start` | Server produzione locale |
-| `npm run typecheck` | Controllo TypeScript |
+| `npm run dev` | Next.js dev server (Turbopack) |
+| `npm run build` | Production build (`next build`) |
+| `npm run start` | Local production server |
+| `npm run typecheck` | TypeScript check |
 | `npm run lint` | ESLint |
 | `npm run test` | Vitest (unit) |
 | `npm run setup` | `prisma generate` + `migrate deploy` + seed |
-| `npm run db:seed` | Re-seed catalogo completo |
-| `npm run db:seed-admin` | Crea/aggiorna solo utente admin |
-| `npm run db:migrate` | Migration in sviluppo |
-| `npm run db:migrate:deploy` | Migration in produzione (URL diretto) |
-| `npm run db:import-stockx` | Importa 21 sneakers StockX nel DB |
-| `npm run db:refresh-images` | Aggiorna URL immagini prodotti |
-| `npm run db:studio` | GUI database Prisma Studio |
+| `npm run db:seed` | Re-seed full catalog |
+| `npm run db:seed-admin` | Create/update admin user only |
+| `npm run db:migrate` | Dev migration |
+| `npm run db:migrate:deploy` | Production migration (direct URL) |
+| `npm run db:import-stockx` | Import 21 StockX sneakers |
+| `npm run db:refresh-images` | Refresh product image URLs |
+| `npm run db:studio` | Prisma Studio GUI |
 
-Script aggiuntivi in `scripts/`:
+Additional scripts in `scripts/`:
 
-| File | Scopo |
-|------|-------|
-| `migrate-deploy.mjs` | Wrapper migrate con `POSTGRES_URL_NON_POOLING` |
-| `import-stockx-products.ts` | Import catalogo StockX |
-| `backfill-color-images.ts` | Associa immagini a colori varianti |
-| `update-homepage-banners.ts` | Aggiorna banner editoriali |
-| `export-seed-sql.ts` | Esporta seed come SQL |
-| `clear-images.ts` | Pulisce immagini orfane |
-| `seed-admin.ts` | Seed utente admin |
+| File | Purpose |
+|------|---------|
+| `migrate-deploy.mjs` | Migration wrapper with `POSTGRES_URL_NON_POOLING` |
+| `import-stockx-products.ts` | StockX catalog import |
+| `backfill-color-images.ts` | Associate images with variant colors |
+| `update-homepage-banners.ts` | Update editorial banners |
+| `export-seed-sql.ts` | Export seed as SQL |
+| `clear-images.ts` | Clean orphan images |
+| `seed-admin.ts` | Admin user seed |
 
 ---
 
 ## Deploy (Vercel + Supabase)
 
-### Infrastruttura
+### Infrastructure
 
-| Servizio | Dettaglio |
-|----------|-----------|
-| **Hosting** | Vercel — progetto `eshop-streetwear` |
-| **Dominio** | `rewinddrop.vercel.app` |
-| **Database** | Supabase PostgreSQL (`eshop-streetwear`, regione `eu-west-1`) |
-| **Integrazione** | Vercel ↔ Supabase (env `POSTGRES_*` auto-iniettate) |
+| Service | Detail |
+|---------|--------|
+| **Hosting** | Vercel — project `eshop-streetwear` |
+| **Domain** | `rewinddrop.vercel.app` |
+| **Database** | Supabase PostgreSQL (`eshop-streetwear`, region `eu-west-1`) |
+| **Integration** | Vercel ↔ Supabase (env `POSTGRES_*` auto-injected) |
 | **Build** | `npx prisma generate && npm run build` (`vercel.json`) |
-| **Migrazioni** | **Non** nel build — eseguire `npm run db:migrate:deploy` separatamente |
+| **Migrations** | **Not** in build — run `npm run db:migrate:deploy` separately |
 
-### Variabili Vercel (produzione)
+### Vercel environment (production)
 
 ```
 AUTH_SECRET=<random>
 AUTH_TRUST_HOST=true
 PAYMENT_MODE=mock
 NEXT_PUBLIC_APP_URL=https://rewinddrop.vercel.app
-POSTGRES_PRISMA_URL=<da integrazione Supabase>
-POSTGRES_URL_NON_POOLING=<da integrazione Supabase>
+POSTGRES_PRISMA_URL=<from Supabase integration>
+POSTGRES_URL_NON_POOLING=<from Supabase integration>
 ```
 
-Opzionali: `BLOB_READ_WRITE_TOKEN`, chiavi Stripe, SMTP, Google OAuth.
+Optional: `BLOB_READ_WRITE_TOKEN`, Stripe keys, SMTP, Google OAuth.
 
-### Workflow deploy
+### Deployment workflow
 
 ```bash
-# 1. Push su main → deploy automatico Vercel
+# 1. Push to main → automatic Vercel deploy
 git push origin main
 
-# 2. Migrazioni su Supabase (dopo nuove migration in repo)
-npm run db:migrate:deploy   # con .env produzione o Supabase MCP
+# 2. Migrations on Supabase (after new migrations in repo)
+npm run db:migrate:deploy   # with production .env or Supabase MCP
 
-# 3. Seed (solo prima installazione o reset)
+# 3. Seed (first install or reset only)
 npm run db:seed
 ```
 
-### Note produzione
+### Production notes
 
-- Il filesystem Vercel è **effimero** — usare Vercel Blob per upload persistenti.
-- Connessione Supabase: SSL con `rejectUnauthorized: false` gestito in `src/lib/prisma.ts`.
-- Il build **non** esegue `prisma migrate deploy` per evitare hang sul connection pooler.
-- Homepage con **ISR 120s** — aggiornamenti catalogo visibili entro 2 minuti senza rebuild.
+- Vercel filesystem is **ephemeral** — use Vercel Blob for persistent uploads.
+- Supabase connection: SSL with `rejectUnauthorized: false` handled in `src/lib/prisma.ts`.
+- Build does **not** run `prisma migrate deploy` to avoid pooler connection hangs.
+- Homepage uses **ISR 120s** — catalog updates visible within 2 minutes without rebuild.
 
 ---
 
-## Testing e qualità
+## Testing & Quality
 
 ```bash
 npm run typecheck    # TypeScript strict
@@ -438,56 +436,56 @@ npm run lint         # ESLint (eslint-config-next)
 npm run test         # Vitest — validations, SKU helpers
 ```
 
-Test attuali:
+Current tests:
 - `src/lib/validations/checkout.test.ts`
 - `src/lib/sku.test.ts`
 
 ---
 
-## Struttura del progetto
+## Project Structure
 
 ```
 eshop/
 ├── prisma/
-│   ├── schema.prisma          # Modelli dati
-│   ├── seed.ts                # Seed catalogo demo
-│   └── migrations/            # Migration SQL versionate
-├── scripts/                   # CLI utility (import StockX, migrate, ecc.)
+│   ├── schema.prisma          # Data models
+│   ├── seed.ts                # Demo catalog seed
+│   └── migrations/            # Versioned SQL migrations
+├── scripts/                   # CLI utilities (StockX import, migrate, etc.)
 ├── public/
-│   └── uploads/               # Upload locali (gitignored tranne .gitkeep)
+│   └── uploads/               # Local uploads (gitignored except .gitkeep)
 ├── src/
 │   ├── app/
-│   │   ├── (store)/           # Storefront (layout con header/footer)
-│   │   ├── admin/             # Pannello amministrazione
-│   │   ├── api/               # Route Handlers REST
-│   │   ├── login/             # Pagina login/registrazione
+│   │   ├── (store)/           # Storefront (layout with header/footer)
+│   │   ├── admin/             # Admin panel
+│   │   ├── api/               # REST Route Handlers
+│   │   ├── login/             # Login/registration page
 │   │   ├── layout.tsx         # Root layout + metadata
-│   │   └── globals.css        # Tailwind + animazioni homepage
+│   │   └── globals.css        # Tailwind + homepage animations
 │   ├── components/
-│   │   ├── admin/             # UI admin (form, tabelle, dashboard)
-│   │   ├── home/              # Sezioni homepage
+│   │   ├── admin/             # Admin UI (forms, tables, dashboard)
+│   │   ├── home/              # Homepage sections
 │   │   ├── layout/            # Header, footer, providers
-│   │   ├── product/           # Card, galleria colori
-│   │   └── ui/                # Primitivi UI riutilizzabili
-│   ├── generated/prisma/      # Prisma Client (generato)
-│   ├── hooks/                 # React hooks custom
-│   ├── lib/                   # Business logic, query, validazioni
-│   │   ├── validations/       # Schemi Zod
+│   │   ├── product/           # Card, color gallery
+│   │   └── ui/                # Reusable UI primitives
+│   ├── generated/prisma/      # Prisma Client (generated)
+│   ├── hooks/                 # Custom React hooks
+│   ├── lib/                   # Business logic, queries, validations
+│   │   ├── validations/       # Zod schemas
 │   │   ├── payments/          # Stripe + mock
-│   │   ├── stockx-products.ts # Catalogo sneakers StockX
+│   │   ├── stockx-products.ts # StockX sneaker catalog
 │   │   └── homepage-banners.ts
 │   ├── stores/
-│   │   └── cart.ts            # Zustand store carrello
+│   │   └── cart.ts            # Zustand cart store
 │   └── middleware.ts          # Auth guard
 ├── docker-compose.yml         # Postgres + MailHog
-├── prisma.config.ts           # Config Prisma 7
+├── prisma.config.ts           # Prisma 7 configuration
 ├── next.config.ts             # Image domains, optimizePackageImports
-├── vercel.json                # Build command Vercel
+├── vercel.json                # Vercel build command
 └── vitest.config.ts
 ```
 
 ---
 
-## Licenza
+## License
 
-Progetto dimostrativo — uso portfolio/educativo. Immagini e marchi nei prodotti demo sono a scopo illustrativo e non implicano affiliazione con i brand raffigurati.
+Demo project — portfolio/educational use. Images and trademarks in demo products are for illustrative purposes and do not imply affiliation with the depicted brands.
